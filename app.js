@@ -1,60 +1,43 @@
-const STORAGE_KEY = "kova_os_vault_v1";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-const defaultData = {
-  user: null, // { ownerName, contact, storeName }
-  branches: ["Ota Express", "Ikeja Flagship", "Lekki Hub"],
-  products: [
-    {
-      id: "p1",
-      title: "UltraBass Wireless Earbuds",
-      price: 24500,
-      category: "Electronics",
-      branch: "Ota Express",
-      stock: 18,
-      caption: "Crystal-clear sound with 36-hour battery backup. Order now on Kova!",
-      channels: ["Kova Store", "WhatsApp", "TikTok", "Instagram"]
-    },
-    {
-      id: "p2",
-      title: "Signature Linen Two-Piece Set",
-      price: 38000,
-      category: "Fashion",
-      branch: "Ikeja Flagship",
-      stock: 10,
-      caption: "Breathable tailored fit ready for same-day dispatch.",
-      channels: ["Kova Store", "Instagram", "TikTok"]
-    }
-  ],
-  orders: [],
-  jobs: [
-    { id: "j1", title: "TikTok Live Commerce Host", branch: "Ota Express", applied: false },
-    { id: "j2", title: "Branch Operations Lead", branch: "Ikeja Flagship", applied: false }
-  ]
+const firebaseConfig = {
+  apiKey: "AIzaSyDRXPgC5kSBT04mDyT1BEEyJMDEro5gDLo",
+  authDomain: "kova-cloud.firebaseapp.com",
+  projectId: "kova-cloud",
+  storageBucket: "kova-cloud.firebasestorage.app",
+  messagingSenderId: "917204630845",
+  appId: "1:917204630845:web:3a5582637f06607ff9d954"
 };
 
-let db = loadVault();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
 let activeCheckoutProductId = null;
 
-function cloneDefault() {
-  return JSON.parse(JSON.stringify(defaultData));
-}
-
-function loadVault() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? { ...cloneDefault(), ...JSON.parse(raw) } : cloneDefault();
-  } catch {
-    return cloneDefault();
-  }
-}
-
-function saveVault() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
-  } catch {
-    // Ignore storage restriction errors
-  }
-}
+let storeData = {
+  ownerName: "Store Owner",
+  storeName: "Kova Prime Mart",
+  slug: "kova-prime-mart",
+  branches: ["Ota Express", "Ikeja Flagship", "Lekki Hub"],
+  products: [],
+  orders: [],
+  jobs: []
+};
 
 function naira(val) {
   return "₦" + Number(val || 0).toLocaleString("en-NG");
@@ -70,6 +53,11 @@ function slugify(str) {
   );
 }
 
+async function persistStore() {
+  if (!currentUser) return;
+  await setDoc(doc(db, "stores", currentUser.uid), storeData, { merge: true });
+}
+
 // =========================================================
 // 1. ORBITAL SPLASH SCREEN -> TAP ANYWHERE TO LEAVE
 // =========================================================
@@ -77,11 +65,16 @@ const orbitalScreen = document.getElementById("orbital-screen");
 const authScreen = document.getElementById("auth-screen");
 const appShell = document.getElementById("app-shell");
 
-function enterFromOrbital() {
+let orbitalDismissed = false;
+
+function dismissOrbital() {
+  if (orbitalDismissed) return;
+  orbitalDismissed = true;
   orbitalScreen.classList.add("fade-out");
+
   setTimeout(() => {
     orbitalScreen.classList.add("hidden");
-    if (db.user && db.user.storeName) {
+    if (currentUser) {
       openWorkspace();
     } else {
       authScreen.classList.remove("hidden");
@@ -89,13 +82,30 @@ function enterFromOrbital() {
   }, 420);
 }
 
-orbitalScreen.addEventListener("click", enterFromOrbital);
+orbitalScreen.addEventListener("click", dismissOrbital);
 orbitalScreen.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" || e.key === " ") enterFromOrbital();
+  if (e.key === "Enter" || e.key === " ") dismissOrbital();
+});
+
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
+  if (user) {
+    try {
+      const snap = await getDoc(doc(db, "stores", user.uid));
+      if (snap.exists()) {
+        storeData = { ...storeData, ...snap.data() };
+      }
+    } catch (err) {
+      console.error("Failed to load store from Firestore:", err);
+    }
+    if (orbitalDismissed) {
+      openWorkspace();
+    }
+  }
 });
 
 // =========================================================
-// 2. AUTHENTICATION & ACCOUNT CREATION
+// 2. FIREBASE SIGN UP & SIGN IN
 // =========================================================
 const showSignupBtn = document.getElementById("show-signup-btn");
 const showSigninBtn = document.getElementById("show-signin-btn");
@@ -116,44 +126,72 @@ showSigninBtn.addEventListener("click", () => {
   signupForm.classList.add("hidden");
 });
 
-signupForm.addEventListener("submit", (e) => {
+signupForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const ownerName = document.getElementById("reg-name").value.trim();
-  const contact = document.getElementById("reg-email").value.trim();
+  const email = document.getElementById("reg-email").value.trim();
   const storeName = document.getElementById("reg-store").value.trim();
-  const primaryBranch = document.getElementById("reg-branch").value.trim();
+  const primaryBranch = document.getElementById("reg-branch").value.trim() || "Ota Express";
+  const password = prompt("Create a password (at least 6 characters):");
 
-  db.user = { ownerName, contact, storeName };
-  if (primaryBranch && !db.branches.includes(primaryBranch)) {
-    db.branches.unshift(primaryBranch);
+  if (!password || password.length < 6) {
+    alert("Password must be at least 6 characters.");
+    return;
   }
-  saveVault();
-  openWorkspace();
-});
 
-signinForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const contact = document.getElementById("login-email").value.trim();
-  if (!db.user) {
-    db.user = { ownerName: "Store Owner", contact, storeName: "Kova Prime Mart" };
-    saveVault();
-  }
-  openWorkspace();
-});
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    currentUser = cred.user;
+    const branches = storeData.branches.includes(primaryBranch)
+      ? storeData.branches
+      : [primaryBranch, ...storeData.branches];
 
-document.getElementById("demo-access-btn").addEventListener("click", () => {
-  if (!db.user) {
-    db.user = {
-      ownerName: "Demo Founder",
-      contact: "founder@kova.shop",
-      storeName: "Kova Prime Mart"
+    storeData = {
+      ownerName,
+      storeName,
+      slug: `${slugify(storeName)}-${cred.user.uid.slice(0, 5)}`,
+      branches,
+      products: storeData.products || [],
+      orders: storeData.orders || [],
+      jobs: storeData.jobs || []
     };
-    saveVault();
+
+    await setDoc(doc(db, "stores", cred.user.uid), storeData);
+    openWorkspace();
+  } catch (err) {
+    alert(err.message);
   }
-  openWorkspace();
 });
 
-document.getElementById("signout-btn").addEventListener("click", () => {
+signinForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("login-email").value.trim();
+  const password = prompt("Enter your password:");
+  if (!password) return;
+
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    currentUser = cred.user;
+    const snap = await getDoc(doc(db, "stores", cred.user.uid));
+    if (snap.exists()) {
+      storeData = { ...storeData, ...snap.data() };
+    }
+    openWorkspace();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+const demoBtn = document.getElementById("demo-access-btn");
+if (demoBtn) {
+  demoBtn.addEventListener("click", () => {
+    openWorkspace();
+  });
+}
+
+document.getElementById("signout-btn").addEventListener("click", async () => {
+  await signOut(auth);
+  currentUser = null;
   appShell.classList.add("hidden");
   authScreen.classList.remove("hidden");
 });
@@ -166,10 +204,9 @@ function openWorkspace() {
   authScreen.classList.add("hidden");
   appShell.classList.remove("hidden");
 
-  const storeName = db.user?.storeName || "Kova Prime Mart";
-  document.getElementById("header-store-name").textContent = storeName;
-  document.getElementById("header-store-slug").textContent = `kova.shop/${slugify(storeName)}`;
-  document.getElementById("account-pill-btn").textContent = db.user?.ownerName || "Account";
+  document.getElementById("header-store-name").textContent = storeData.storeName;
+  document.getElementById("header-store-slug").textContent = `kova.shop/${storeData.slug}`;
+  document.getElementById("account-pill-btn").textContent = storeData.ownerName;
 
   syncBranchSelectors();
   renderMarketplace();
@@ -194,9 +231,9 @@ document.querySelectorAll(".cat-pill").forEach((pill) => {
 });
 
 // =========================================================
-// 4. UPLOAD ONCE & BLAST TO ALL SOCIALS
+// 4. UPLOAD ONCE & BLAST TO ALL SOCIALS (FIRESTORE)
 // =========================================================
-document.getElementById("product-form").addEventListener("submit", (e) => {
+document.getElementById("product-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const title = document.getElementById("prod-title").value.trim();
   const price = Number(document.getElementById("prod-price").value);
@@ -208,35 +245,33 @@ document.getElementById("product-form").addEventListener("submit", (e) => {
 
   if (!title || !price) return;
 
-  const storeName = db.user?.storeName || "Kova Store";
   const selectedChannels = channels.length ? channels : ["Kova Store"];
-  const finalCaption = caption || `${title} is now live at ${storeName}!`;
-
-  db.products.unshift({
+  const newProduct = {
     id: "p_" + Date.now(),
     title,
     price,
     category,
     branch,
     stock,
-    caption: finalCaption,
+    caption: caption || `${title} is now live at ${storeData.storeName}!`,
     channels: selectedChannels
-  });
+  };
 
-  saveVault();
+  storeData.products.unshift(newProduct);
+  await persistStore();
   renderMarketplace();
   renderBusinessPro();
 
   const feedback = document.getElementById("blast-feedback");
   feedback.classList.remove("hidden");
-  feedback.innerHTML = `<strong>Blasted live!</strong> "${title}" (${naira(price)}) synced to <strong>${selectedChannels.join(", ")}</strong> under ${branch}.`;
+  feedback.innerHTML = `<strong>Blasted & Saved to Firebase!</strong> "${title}" (${naira(price)}) synced to <strong>${selectedChannels.join(", ")}</strong>.`;
 
   e.target.reset();
   document.getElementById("prod-stock").value = "20";
 });
 
 // =========================================================
-// 5. SLEEK MARKETPLACE & ESCROW CHECKOUT
+// 5. MARKETPLACE & ESCROW ORDERS
 // =========================================================
 const marketSearch = document.getElementById("market-search");
 const marketFilterCat = document.getElementById("market-filter-cat");
@@ -249,18 +284,18 @@ function renderMarketplace() {
   const cat = marketFilterCat.value;
   const grid = document.getElementById("marketplace-grid");
 
-  const items = db.products.filter((p) => {
+  const items = (storeData.products || []).filter((p) => {
     const matchCat = cat === "All" || p.category === cat;
     const matchQ =
       !q ||
       p.title.toLowerCase().includes(q) ||
       p.branch.toLowerCase().includes(q) ||
-      p.caption.toLowerCase().includes(q);
+      (p.caption || "").toLowerCase().includes(q);
     return matchCat && matchQ;
   });
 
   if (!items.length) {
-    grid.innerHTML = `<p class="subtext">No items match your filter.</p>`;
+    grid.innerHTML = `<p class="subtext">No items in your store catalog yet.</p>`;
     return;
   }
 
@@ -271,15 +306,15 @@ function renderMarketplace() {
         <div>
           <div class="prod-tag">${p.category} • ${p.branch}</div>
           <h3 class="prod-title">${p.title}</h3>
-          <p class="prod-caption">${p.caption}</p>
-          <div class="prod-channels">Live on: ${p.channels.join(" · ")}</div>
+          <p class="prod-caption">${p.caption || ""}</p>
+          <div class="prod-channels">Live on: ${(p.channels || []).join(" · ")}</div>
         </div>
         <div>
           <div class="prod-price-row">
             <span class="prod-price">${naira(p.price)}</span>
             <span class="prod-stock">${p.stock} in stock</span>
           </div>
-          <button type="button" class="btn-glow" onclick="openCheckout('${p.id}')" ${p.stock <= 0 ? "disabled" : ""}>
+          <button type="button" class="btn-glow" onclick="window.openCheckout('${p.id}')" ${p.stock <= 0 ? "disabled" : ""}>
             ${p.stock > 0 ? "Order with Escrow" : "Sold Out"}
           </button>
         </div>
@@ -293,7 +328,7 @@ const checkoutModal = document.getElementById("checkout-modal");
 const checkoutMsg = document.getElementById("checkout-msg");
 
 window.openCheckout = function (productId) {
-  const item = db.products.find((p) => p.id === productId);
+  const item = storeData.products.find((p) => p.id === productId);
   if (!item || item.stock <= 0) return;
 
   activeCheckoutProductId = productId;
@@ -312,9 +347,9 @@ document.getElementById("close-checkout-btn").addEventListener("click", () => {
 });
 
 document.getElementById("copy-link-btn").addEventListener("click", async () => {
-  const item = db.products.find((p) => p.id === activeCheckoutProductId);
+  const item = storeData.products.find((p) => p.id === activeCheckoutProductId);
   if (!item) return;
-  const link = `https://kova.shop/${slugify(db.user?.storeName)}/pay/${item.id}`;
+  const link = `${window.location.origin}${window.location.pathname}?store=${storeData.slug}&item=${item.id}`;
   try {
     await navigator.clipboard.writeText(link);
     checkoutMsg.textContent = `Copied link: ${link}`;
@@ -323,15 +358,15 @@ document.getElementById("copy-link-btn").addEventListener("click", async () => {
   }
 });
 
-document.getElementById("confirm-order-btn").addEventListener("click", () => {
-  const item = db.products.find((p) => p.id === activeCheckoutProductId);
+document.getElementById("confirm-order-btn").addEventListener("click", async () => {
+  const item = storeData.products.find((p) => p.id === activeCheckoutProductId);
   if (!item || item.stock <= 0) return;
 
   const buyer = document.getElementById("buyer-name").value.trim() || "Verified Buyer";
   const note = document.getElementById("buyer-note").value.trim() || item.branch;
 
   item.stock -= 1;
-  db.orders.unshift({
+  storeData.orders.unshift({
     id: "ORD-" + String(Date.now()).slice(-5),
     productTitle: item.title,
     amount: item.price,
@@ -340,72 +375,72 @@ document.getElementById("confirm-order-btn").addEventListener("click", () => {
     status: "In Escrow"
   });
 
-  saveVault();
+  await persistStore();
   renderMarketplace();
   renderBusinessPro();
 
-  checkoutMsg.textContent = `Escrow order confirmed for ${buyer}!`;
+  checkoutMsg.textContent = `Escrow order saved to Firebase for ${buyer}!`;
   document.getElementById("buyer-name").value = "";
   document.getElementById("buyer-note").value = "";
 });
 
 // =========================================================
-// 6. BUSINESS PRO (KPIs, BRANCHES, ESCROW LEDGER, EXPORT)
+// 6. BUSINESS PRO (BRANCHES, KPIs, LEDGER & BACKUP)
 // =========================================================
 function syncBranchSelectors() {
-  const optionsHtml = db.branches.map((b) => `<option value="${b}">${b}</option>`).join("");
+  const optionsHtml = (storeData.branches || []).map((b) => `<option value="${b}">${b}</option>`).join("");
   document.getElementById("prod-branch").innerHTML = optionsHtml;
   document.getElementById("transfer-dest").innerHTML = optionsHtml;
-  document.getElementById("transfer-item").innerHTML = db.products
+  document.getElementById("transfer-item").innerHTML = (storeData.products || [])
     .map((p) => `<option value="${p.id}">${p.title} (${p.branch})</option>`)
     .join("");
 }
 
-document.getElementById("add-branch-form").addEventListener("submit", (e) => {
+document.getElementById("add-branch-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const input = document.getElementById("new-branch-name");
   const name = input.value.trim();
-  if (!name || db.branches.includes(name)) return;
+  if (!name || storeData.branches.includes(name)) return;
 
-  db.branches.push(name);
-  saveVault();
+  storeData.branches.push(name);
+  await persistStore();
   syncBranchSelectors();
   document.getElementById("branch-msg").textContent = `Added branch "${name}".`;
   input.value = "";
 });
 
-document.getElementById("transfer-form").addEventListener("submit", (e) => {
+document.getElementById("transfer-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const itemId = document.getElementById("transfer-item").value;
   const dest = document.getElementById("transfer-dest").value;
-  const product = db.products.find((p) => p.id === itemId);
+  const product = storeData.products.find((p) => p.id === itemId);
   if (!product) return;
 
   product.branch = dest;
-  saveVault();
+  await persistStore();
   syncBranchSelectors();
   renderMarketplace();
-  document.getElementById("branch-msg").textContent = `Reassigned "${product.title}" to ${dest}.`;
+  document.getElementById("branch-msg").textContent = `Moved "${product.title}" to ${dest}.`;
 });
 
 function renderBusinessPro() {
   syncBranchSelectors();
 
-  const totalRevenue = db.orders.reduce((sum, o) => sum + Number(o.amount || 0), 0);
-  const totalUnits = db.products.reduce((sum, p) => sum + Number(p.stock || 0), 0);
+  const totalRevenue = (storeData.orders || []).reduce((sum, o) => sum + Number(o.amount || 0), 0);
+  const totalUnits = (storeData.products || []).reduce((sum, p) => sum + Number(p.stock || 0), 0);
 
   document.getElementById("kpi-revenue").textContent = naira(totalRevenue);
-  document.getElementById("kpi-skus").textContent = db.products.length;
+  document.getElementById("kpi-skus").textContent = (storeData.products || []).length;
   document.getElementById("kpi-units").textContent = totalUnits;
-  document.getElementById("kpi-orders").textContent = db.orders.length;
+  document.getElementById("kpi-orders").textContent = (storeData.orders || []).length;
 
   const ledger = document.getElementById("orders-ledger");
-  if (!db.orders.length) {
-    ledger.innerHTML = `<p class="subtext">No escrow orders yet. Orders placed in the Marketplace appear here.</p>`;
+  if (!storeData.orders?.length) {
+    ledger.innerHTML = `<p class="subtext">No escrow orders yet.</p>`;
     return;
   }
 
-  ledger.innerHTML = db.orders
+  ledger.innerHTML = storeData.orders
     .map(
       (o) => `
       <div class="list-row">
@@ -424,11 +459,11 @@ function renderBusinessPro() {
 }
 
 document.getElementById("export-data-btn").addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(storeData, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${slugify(db.user?.storeName || "kova")}-backup.json`;
+  a.download = `${storeData.slug || "kova"}-firebase-backup.json`;
   a.click();
   URL.revokeObjectURL(url);
 });
@@ -436,31 +471,34 @@ document.getElementById("export-data-btn").addEventListener("click", () => {
 // =========================================================
 // 7. KOVA TALENT / HIRING HUB
 // =========================================================
-document.getElementById("job-form").addEventListener("submit", (e) => {
+document.getElementById("job-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const title = document.getElementById("job-title").value.trim();
   const branch = document.getElementById("job-branch").value.trim();
   if (!title || !branch) return;
 
-  db.jobs.unshift({ id: "j_" + Date.now(), title, branch, applied: false });
-  saveVault();
+  storeData.jobs.unshift({ id: "j_" + Date.now(), title, branch, applied: false });
+  await persistStore();
   renderHiring();
   e.target.reset();
 });
 
 function renderHiring() {
   const list = document.getElementById("jobs-container");
-  const storeName = db.user?.storeName || "Kova Prime Mart";
+  if (!storeData.jobs?.length) {
+    list.innerHTML = `<p class="subtext">No open roles posted yet.</p>`;
+    return;
+  }
 
-  list.innerHTML = db.jobs
+  list.innerHTML = storeData.jobs
     .map(
       (j) => `
       <div class="list-row">
         <div>
           <strong>${j.title}</strong>
-          <div class="subtext" style="margin:2px 0 0;">${storeName} • ${j.branch}</div>
+          <div class="subtext" style="margin:2px 0 0;">${storeData.storeName} • ${j.branch}</div>
         </div>
-        <button type="button" class="btn-secondary" onclick="toggleApplyJob('${j.id}')">
+        <button type="button" class="btn-secondary" onclick="window.toggleApplyJob('${j.id}')">
           ${j.applied ? "Applied ✓" : "1-Click Apply"}
         </button>
       </div>
@@ -469,10 +507,11 @@ function renderHiring() {
     .join("");
 }
 
-window.toggleApplyJob = function (jobId) {
-  const job = db.jobs.find((j) => j.id === jobId);
+window.toggleApplyJob = async function (jobId) {
+  const job = storeData.jobs.find((j) => j.id === jobId);
   if (!job) return;
   job.applied = true;
-  saveVault();
+  await persistStore();
   renderHiring();
 };
+                            

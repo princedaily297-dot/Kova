@@ -12,7 +12,6 @@ import {
   getDoc,
   setDoc,
   updateDoc,
-  deleteDoc,
   collection,
   query,
   where,
@@ -104,57 +103,76 @@ async function persistStore() {
     const { orders, ...storePayload } = storeData;
     await setDoc(doc(db, "stores", storeId), storePayload, { merge: true });
   } catch (err) {
-    console.error("Firestore save error:", err);
+    console.warn("Firestore save warning:", err);
   }
 }
 
 function cleanupListeners() {
-  if (unsubscribeStore) {
-    unsubscribeStore();
-    unsubscribeStore = null;
-  }
-  if (unsubscribeOrders) {
-    unsubscribeOrders();
-    unsubscribeOrders = null;
-  }
+  try {
+    if (unsubscribeStore) unsubscribeStore();
+  } catch {}
+  try {
+    if (unsubscribeOrders) unsubscribeOrders();
+  } catch {}
+  unsubscribeStore = null;
+  unsubscribeOrders = null;
 }
 
 function bindRealtimeStore(storeId, buyerView) {
   cleanupListeners();
+  if (!storeId) return;
 
-  unsubscribeStore = onSnapshot(doc(db, "stores", storeId), (snap) => {
-    if (!snap.exists()) return;
-    const incoming = snap.data();
-    storeData = {
-      ...storeData,
-      ...incoming,
-      bankDetails: incoming.bankDetails || storeData.bankDetails,
-      products: incoming.products || [],
-      jobs: incoming.jobs || [],
-      branches: incoming.branches || ["Ota Express"]
-    };
+  try {
+    unsubscribeStore = onSnapshot(
+      doc(db, "stores", storeId),
+      (snap) => {
+        if (!snap.exists()) return;
+        const incoming = snap.data() || {};
+        storeData = {
+          ...storeData,
+          ...incoming,
+          bankDetails: incoming.bankDetails || storeData.bankDetails,
+          products: Array.isArray(incoming.products) ? incoming.products : storeData.products,
+          jobs: Array.isArray(incoming.jobs) ? incoming.jobs : storeData.jobs,
+          branches: Array.isArray(incoming.branches) && incoming.branches.length
+            ? incoming.branches
+            : storeData.branches
+        };
 
-    document.getElementById("header-store-name").textContent = storeData.storeName;
-    document.getElementById("header-store-slug").textContent = `kova.shop/${storeData.slug}`;
-    renderMarketplace();
-    updateStorePolicyBanner();
+        document.getElementById("header-store-name").textContent = storeData.storeName;
+        document.getElementById("header-store-slug").textContent = `kova.shop/${storeData.slug}`;
+        renderMarketplace();
+        updateStorePolicyBanner();
+
+        if (!buyerView) {
+          syncBranchSelectors();
+          hydrateBankInputs();
+          renderBusinessPro();
+          renderHiring();
+        }
+      },
+      (err) => {
+        console.warn("Store snapshot warning:", err);
+      }
+    );
 
     if (!buyerView) {
-      syncBranchSelectors();
-      hydrateBankInputs();
-      renderBusinessPro();
-      renderHiring();
+      unsubscribeOrders = onSnapshot(
+        collection(db, "stores", storeId, "orders"),
+        (snap) => {
+          const liveOrders = snap.docs
+            .map((d) => ({ docId: d.id, ...d.data() }))
+            .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          storeData.orders = liveOrders;
+          renderBusinessPro();
+        },
+        (err) => {
+          console.warn("Orders snapshot warning:", err);
+        }
+      );
     }
-  });
-
-  if (!buyerView) {
-    unsubscribeOrders = onSnapshot(collection(db, "stores", storeId, "orders"), (snap) => {
-      const liveOrders = snap.docs
-        .map((d) => ({ docId: d.id, ...d.data() }))
-        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      storeData.orders = liveOrders;
-      renderBusinessPro();
-    });
+  } catch (err) {
+    console.warn("Listener attach warning:", err);
   }
 }
 
@@ -168,26 +186,28 @@ const appShell = document.getElementById("app-shell");
 let orbitalDismissed = false;
 
 async function checkPublicStoreParam() {
-  const params = new URLSearchParams(window.location.search);
-  const storeSlug = params.get("store");
-  const focusItem = params.get("item");
-  if (!storeSlug) return false;
-
   try {
+    const params = new URLSearchParams(window.location.search);
+    const storeSlug = params.get("store");
+    const focusItem = params.get("item");
+    if (!storeSlug) return false;
+
     const q = query(collection(db, "stores"), where("slug", "==", storeSlug));
-    const snap = await withTimeout(getDocs(q), 2800);
+    const snap = await withTimeout(getDocs(q), 2500);
     if (snap && !snap.empty) {
       const firstDoc = snap.docs[0];
       publicStoreDocId = firstDoc.id;
       storeData = { ...storeData, ...firstDoc.data() };
       isBuyerMode = true;
       if (focusItem) {
-        setTimeout(() => window.openCheckout(focusItem), 350);
+        setTimeout(() => {
+          if (typeof window.openCheckout === "function") window.openCheckout(focusItem);
+        }, 350);
       }
       return true;
     }
   } catch (err) {
-    console.error("Failed to load public storefront:", err);
+    console.warn("Public storefront lookup warning:", err);
   }
   return false;
 }
@@ -204,20 +224,20 @@ function dismissOrbital() {
     } else {
       authScreen.classList.remove("hidden");
     }
-  }, 260);
+  }, 220);
 
-  (async () => {
+  setTimeout(async () => {
     const foundPublic = await checkPublicStoreParam();
     if (foundPublic) {
       authScreen.classList.add("hidden");
       openWorkspace(true);
-    } else if (currentUser) {
-      authScreen.classList.add("hidden");
+    } else if (currentUser && !authScreen.classList.contains("hidden")) {
       openWorkspace(false);
     }
-  })();
+  }, 240);
 }
 
+window.__kovaEnter = dismissOrbital;
 orbitalScreen.addEventListener("click", dismissOrbital);
 orbitalScreen.addEventListener("keydown", (e) => {
   if (e.key === "Enter" || e.key === " ") {
@@ -230,12 +250,12 @@ onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   if (user && !isBuyerMode) {
     try {
-      const snap = await withTimeout(getDoc(doc(db, "stores", user.uid)), 3000);
+      const snap = await withTimeout(getDoc(doc(db, "stores", user.uid)), 2500);
       if (snap && snap.exists()) {
         storeData = { ...storeData, ...snap.data() };
       }
     } catch (err) {
-      console.error("Failed to load store:", err);
+      console.warn("Auth store fetch warning:", err);
     }
     if (orbitalDismissed && !authScreen.classList.contains("hidden")) {
       openWorkspace(false);
@@ -593,31 +613,4 @@ function renderMarketplace() {
               ? `<div class="merchant-card-tools">
                   <button type="button" class="btn-ghost sm" onclick="window.openEditProduct('${p.id}')">Edit</button>
                   <button type="button" class="btn-danger sm" onclick="window.deleteProduct('${p.id}')">Delete</button>
-                </div>`
-              : ""
-          }
-        </div>
-      </article>
-    `
-    )
-    .join("");
-}
-
-window.copyItemLink = async function (productId) {
-  const link = `${window.location.origin}${window.location.pathname}?store=${storeData.slug}&item=${productId}`;
-  try {
-    await navigator.clipboard.writeText(link);
-    showToast("Direct item link copied!");
-  } catch {
-    prompt("Copy item link:", link);
-  }
-};
-
-const editModal = document.getElementById("edit-product-modal");
-
-window.openEditProduct = function (productId) {
-  const item = storeData.products.find((p) => p.id === productId);
-  if (!item) return;
-  editingProductId = productId;
-  document.getElementById("edit-prod-title").value = item.title;
-  document.getElementById("ed
+     

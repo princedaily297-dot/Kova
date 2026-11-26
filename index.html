@@ -4,9 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>KOVA — Omnichannel Commerce OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+
+  <!-- SHINING AMBIENT GLASS BACKDROP -->
+  <div class="ambient-bg" aria-hidden="true">
+    <div class="glow-orb orb-emerald"></div>
+    <div class="glow-orb orb-cyan"></div>
+    <div class="glow-orb orb-violet"></div>
+    <div class="glass-mesh"></div>
+  </div>
 
   <!-- SCREEN 1: FULL-SCREEN KOVA ORBITAL SPLASH -->
   <div id="orbital-screen" class="orbital-screen" role="button" tabindex="0" aria-label="Tap anywhere to enter Kova">
@@ -199,7 +210,7 @@
         <div id="marketplace-grid" class="product-grid"></div>
       </section>
 
-      <!-- VIEW 3: BUSINESS PRO (MANUAL ACCOUNT SETUP, KPIs, BRANCHES, LEDGER & BACKUP) -->
+      <!-- VIEW 3: BUSINESS PRO -->
       <section id="view-business" class="view-section">
         <div class="kpi-grid">
           <div class="kpi-box">
@@ -220,7 +231,6 @@
           </div>
         </div>
 
-        <!-- Manual Payout / Transfer Account Details -->
         <div class="glass-card">
           <h2>Manual Settlement Account Details</h2>
           <p class="subtext">Enter your bank account details manually so buyers can transfer directly during escrow checkout.</p>
@@ -244,7 +254,6 @@
           <p id="bank-msg" class="subtext" style="color:#34d399;margin-top:8px;"></p>
         </div>
 
-        <!-- Branch Management & Stock Rebalance -->
         <div class="glass-card">
           <h2>Multi-Branch Command</h2>
           <form id="add-branch-form" class="inline-form">
@@ -260,13 +269,11 @@
           <p id="branch-msg" class="subtext" style="color:#34d399;margin-top:8px;"></p>
         </div>
 
-        <!-- Escrow Orders Ledger -->
         <div class="glass-card">
           <h2>Escrow Orders Ledger</h2>
           <div id="orders-ledger" class="stack-list"></div>
         </div>
 
-        <!-- Data & Catalogue Export / Sign Out -->
         <div class="glass-card">
           <h2>Store Vault &amp; Data Backup</h2>
           <p class="subtext">Your profile, bank details, photos, branches, and orders sync with Firebase.</p>
@@ -315,5 +322,4 @@
 
   <script type="module" src="app.js"></script>
 </body>
-            </html>
-                                           
+</html>

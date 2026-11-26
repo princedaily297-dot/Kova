@@ -1,4 +1,4 @@
-const STORAGE_KEY = "kova_state_v1";
+const STORAGE_KEY = "kova_state_v2";
 
 const defaultState = {
   storeName: "Kova Prime Mart",
@@ -43,6 +43,7 @@ const defaultState = {
 };
 
 let state = loadState();
+let pendingOrderProductId = null;
 
 function cloneDefaultState() {
   return JSON.parse(JSON.stringify(defaultState));
@@ -144,6 +145,7 @@ document.getElementById("product-form").addEventListener("submit", (e) => {
   state.products.unshift(newProduct);
   saveState();
   renderMarketplace();
+  renderTransferOptions();
 
   document.getElementById("blast-log").textContent =
     `Published "${title}" to ${selectedChannels.join(", ")} (${state.branch}).`;
@@ -170,9 +172,35 @@ document.getElementById("copy-share-btn").addEventListener("click", async () => 
   }
 });
 
-// Marketplace render & escrow order
+// Multi-branch product assignment
+function renderTransferOptions() {
+  const select = document.getElementById("transfer-product");
+  select.innerHTML = state.products
+    .map((p) => `<option value="${p.id}">${p.title} (${p.branch})</option>`)
+    .join("");
+}
+
+document.getElementById("transfer-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const productId = document.getElementById("transfer-product").value;
+  const targetBranch = document.getElementById("transfer-target-branch").value;
+  const item = state.products.find((p) => p.id === productId);
+  if (!item) return;
+
+  item.branch = targetBranch;
+  saveState();
+  renderMarketplace();
+  renderTransferOptions();
+  document.getElementById("transfer-log").textContent =
+    `Moved "${item.title}" to ${targetBranch}.`;
+});
+
+// Marketplace render & escrow checkout modal
 const searchInput = document.getElementById("market-search");
 const categorySelect = document.getElementById("market-category");
+const checkoutModal = document.getElementById("checkout-modal");
+const checkoutSummary = document.getElementById("checkout-summary");
+const checkoutStatus = document.getElementById("checkout-status");
 
 searchInput.addEventListener("input", renderMarketplace);
 categorySelect.addEventListener("change", renderMarketplace);
@@ -225,12 +253,49 @@ function renderMarketplace() {
 window.orderItem = function (productId) {
   const item = state.products.find((p) => p.id === productId);
   if (!item || item.stock <= 0) return;
+
+  pendingOrderProductId = productId;
+  checkoutStatus.textContent = "";
+  checkoutSummary.innerHTML = `
+    <div><strong>${item.title}</strong></div>
+    <div class="meta">Store: ${state.storeName || "Kova Store"} • Branch: ${item.branch}</div>
+    <div class="price">${formatNaira(item.price)}</div>
+  `;
+  checkoutModal.classList.remove("hidden");
+};
+
+document.getElementById("close-modal-btn").addEventListener("click", () => {
+  checkoutModal.classList.add("hidden");
+  pendingOrderProductId = null;
+});
+
+document.getElementById("copy-pay-link-btn").addEventListener("click", async () => {
+  const item = state.products.find((p) => p.id === pendingOrderProductId);
+  if (!item) return;
+  const link = `https://kova.shop/${slugify(state.storeName)}/pay/${item.id}`;
+  try {
+    await navigator.clipboard.writeText(link);
+    checkoutStatus.textContent = `Copied checkout link: ${link}`;
+  } catch {
+    checkoutStatus.textContent = `Checkout link: ${link}`;
+  }
+});
+
+document.getElementById("confirm-escrow-btn").addEventListener("click", () => {
+  const item = state.products.find((p) => p.id === pendingOrderProductId);
+  if (!item || item.stock <= 0) return;
+
+  const contact = document.getElementById("buyer-contact").value.trim() || "Walk-in Buyer";
   item.stock -= 1;
   state.ordersCount += 1;
   saveState();
   renderMarketplace();
-  alert(`Escrow order placed for "${item.title}" (${formatNaira(item.price)}) at ${state.storeName}.`);
-};
+  renderTransferOptions();
+
+  checkoutStatus.textContent = `Escrow order confirmed for ${contact} (${formatNaira(item.price)}).`;
+  document.getElementById("buyer-contact").value = "";
+  document.getElementById("buyer-address").value = "";
+});
 
 // Hiring board
 document.getElementById("job-form").addEventListener("submit", (e) => {
@@ -277,5 +342,6 @@ window.applyJob = function (jobId) {
   renderJobs();
 };
 
+renderTransferOptions();
 renderMarketplace();
 renderJobs();

@@ -223,6 +223,7 @@ body {
   height: 36px;
   margin: 0;
   font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .auth-brand h1 {
@@ -307,6 +308,15 @@ input:focus, select:focus, textarea:focus {
   border-color: var(--emerald-bright);
 }
 
+.photo-preview {
+  width: 100%;
+  max-height: 190px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-top: 6px;
+}
+
 .btn-glow {
   width: 100%;
   border: none;
@@ -315,14 +325,19 @@ input:focus, select:focus, textarea:focus {
   background: linear-gradient(135deg, var(--emerald-bright), var(--emerald));
   color: var(--ink);
   font-weight: 800;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: 0 6px 22px rgba(16, 185, 129, 0.28);
 }
 
 .btn-glow.sm {
   width: auto;
   padding: 10px 14px;
+  font-size: 0.82rem;
 }
 
 .btn-secondary {
@@ -348,6 +363,7 @@ input:focus, select:focus, textarea:focus {
 
 .btn-ghost.sm {
   padding: 4px 10px;
+  font-size: 0.76rem;
 }
 
 .btn-danger {
@@ -386,23 +402,35 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 6px;
 }
 
 .brand-cluster {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .store-title {
   font-weight: 800;
-  font-size: 0.98rem;
+  font-size: 0.96rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .store-url {
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   color: var(--emerald-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .account-pill {
@@ -410,10 +438,25 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 0.78rem;
+  padding: 6px 11px;
+  font-size: 0.76rem;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
+}
+
+.buyer-banner {
+  max-width: 860px;
+  margin: 0 auto 8px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: rgba(6, 182, 212, 0.14);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  color: #a5f3fc;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .category-bar {
@@ -537,6 +580,31 @@ input:focus, select:focus, textarea:focus {
   color: #d1fae5;
 }
 
+.share-panel {
+  margin-top: 12px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.share-panel-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.post-box {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 0.82rem;
+  background: rgba(6, 9, 17, 0.65);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
 /* =========================================================
    5. COMPACT MARKETPLACE GRID
    ========================================================= */
@@ -562,6 +630,15 @@ input:focus, select:focus, textarea:focus {
   flex-direction: column;
   justify-content: space-between;
   gap: 10px;
+}
+
+.prod-img {
+  width: 100%;
+  height: 145px;
+  object-fit: cover;
+  border-radius: 11px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
 }
 
 .prod-tag {
@@ -682,7 +759,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* =========================================================
-   7. MODAL
+   7. MODAL & MANUAL BANK BOX
    ========================================================= */
 .modal-backdrop {
   position: fixed;
@@ -704,5 +781,14 @@ input:focus, select:focus, textarea:focus {
   border-radius: 12px;
   padding: 12px;
   margin-top: 8px;
+}
+
+.bank-box {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+  padding: 11px 12px;
+  margin-top: 10px;
+  font-size: 0.82rem;
   }
   

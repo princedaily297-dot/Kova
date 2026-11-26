@@ -134,13 +134,17 @@ function bindRealtimeStore(storeId, buyerView) {
           bankDetails: incoming.bankDetails || storeData.bankDetails,
           products: Array.isArray(incoming.products) ? incoming.products : storeData.products,
           jobs: Array.isArray(incoming.jobs) ? incoming.jobs : storeData.jobs,
-          branches: Array.isArray(incoming.branches) && incoming.branches.length
-            ? incoming.branches
-            : storeData.branches
+          branches:
+            Array.isArray(incoming.branches) && incoming.branches.length
+              ? incoming.branches
+              : storeData.branches
         };
 
         document.getElementById("header-store-name").textContent = storeData.storeName;
         document.getElementById("header-store-slug").textContent = `kova.shop/${storeData.slug}`;
+        if (!buyerView) {
+          document.getElementById("account-pill-btn").textContent = storeData.ownerName;
+        }
         renderMarketplace();
         updateStorePolicyBanner();
 
@@ -219,7 +223,7 @@ function dismissOrbital() {
 
   setTimeout(() => {
     orbitalScreen.classList.add("hidden");
-    if (currentUser) {
+    if (currentUser && !isBuyerMode) {
       openWorkspace(false);
     } else {
       authScreen.classList.remove("hidden");
@@ -231,7 +235,7 @@ function dismissOrbital() {
     if (foundPublic) {
       authScreen.classList.add("hidden");
       openWorkspace(true);
-    } else if (currentUser && !authScreen.classList.contains("hidden")) {
+    } else if (currentUser && !isBuyerMode) {
       openWorkspace(false);
     }
   }, 240);
@@ -249,16 +253,19 @@ orbitalScreen.addEventListener("keydown", (e) => {
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   if (user && !isBuyerMode) {
+    if (orbitalDismissed) {
+      openWorkspace(false);
+    }
     try {
-      const snap = await withTimeout(getDoc(doc(db, "stores", user.uid)), 2500);
+      const snap = await withTimeout(getDoc(doc(db, "stores", user.uid)), 3000);
       if (snap && snap.exists()) {
         storeData = { ...storeData, ...snap.data() };
+        if (orbitalDismissed) {
+          openWorkspace(false);
+        }
       }
     } catch (err) {
       console.warn("Auth store fetch warning:", err);
-    }
-    if (orbitalDismissed && !authScreen.classList.contains("hidden")) {
-      openWorkspace(false);
     }
   }
 });
@@ -336,12 +343,17 @@ signinForm.addEventListener("submit", async (e) => {
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     currentUser = cred.user;
-    const snap = await getDoc(doc(db, "stores", cred.user.uid));
-    if (snap.exists()) {
-      storeData = { ...storeData, ...snap.data() };
-    }
-    showToast("Welcome back!");
     openWorkspace(false);
+    showToast("Welcome back!");
+    try {
+      const snap = await withTimeout(getDoc(doc(db, "stores", cred.user.uid)), 3000);
+      if (snap && snap.exists()) {
+        storeData = { ...storeData, ...snap.data() };
+        openWorkspace(false);
+      }
+    } catch (fetchErr) {
+      console.warn("Sign-in store refresh warning:", fetchErr);
+    }
   } catch (err) {
     showToast(err.message, true);
   }
@@ -399,6 +411,7 @@ function updateStorePolicyBanner() {
 
 function openWorkspace(buyerView) {
   isBuyerMode = Boolean(buyerView);
+  orbitalScreen.classList.add("hidden");
   authScreen.classList.add("hidden");
   appShell.classList.remove("hidden");
 
@@ -606,11 +619,4 @@ function renderMarketplace() {
             <button type="button" class="btn-glow" onclick="window.openCheckout('${p.id}')" ${p.stock <= 0 ? "disabled" : ""}>
               ${p.stock > 0 ? "Order Now" : "Sold Out"}
             </button>
-            <button type="button" class="btn-secondary" title="Copy Item Link" onclick="window.copyItemLink('${p.id}')">Link</button>
-          </div>
-          ${
-            !isBuyerMode
-              ? `<div class="merchant-card-tools">
-                  <button type="button" class="btn-ghost sm" onclick="window.openEditProduct('${p.id}')">Edit</button>
-                  <button type="button" class="btn-danger sm" onclick="window.deleteProduct('${p.id}')">Delete</button>
-     
+            <button type="button" class="btn-secondary" title="Copy Item Link" onclick="window.copyItemLink('${p.i

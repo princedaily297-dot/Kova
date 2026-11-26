@@ -10,7 +10,11 @@ import {
   getFirestore,
   doc,
   getDoc,
-  setDoc
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -28,12 +32,20 @@ const db = getFirestore(app);
 
 let currentUser = null;
 let activeCheckoutProductId = null;
+let pendingPhotoDataUrl = "";
+let isBuyerMode = false;
+let publicStoreDocId = null;
 
 let storeData = {
   ownerName: "Store Owner",
   storeName: "Kova Prime Mart",
   slug: "kova-prime-mart",
   branches: ["Ota Express", "Ikeja Flagship", "Lekki Hub"],
+  bankDetails: {
+    bankName: "",
+    accountNumber: "",
+    accountName: ""
+  },
   products: [],
   orders: [],
   jobs: []
@@ -53,13 +65,24 @@ function slugify(str) {
   );
 }
 
+function getTargetStoreRef() {
+  if (isBuyerMode && publicStoreDocId) {
+    return doc(db, "stores", publicStoreDocId);
+  }
+  if (currentUser) {
+    return doc(db, "stores", currentUser.uid);
+  }
+  return null;
+}
+
 async function persistStore() {
-  if (!currentUser) return;
-  await setDoc(doc(db, "stores", currentUser.uid), storeData, { merge: true });
+  const ref = getTargetStoreRef();
+  if (!ref) return;
+  await setDoc(ref, storeData, { merge: true });
 }
 
 // =========================================================
-// 1. ORBITAL SPLASH SCREEN -> TAP ANYWHERE TO LEAVE
+// 1. PUBLIC STOREFRONT CHECK (?store=slug) & ORBITAL SPLASH
 // =========================================================
 const orbitalScreen = document.getElementById("orbital-screen");
 const authScreen = document.getElementById("auth-screen");
@@ -67,15 +90,40 @@ const appShell = document.getElementById("app-shell");
 
 let orbitalDismissed = false;
 
-function dismissOrbital() {
+async function checkPublicStoreParam() {
+  const params = new URLSearchParams(window.location.search);
+  const storeSlug = params.get("store");
+  if (!storeSlug) return false;
+
+  try {
+    const q = query(collection(db, "stores"), where("slug", "==", storeSlug));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const firstDoc = snap.docs[0];
+      publicStoreDocId = firstDoc.id;
+      storeData = { ...storeData, ...firstDoc.data() };
+      isBuyerMode = true;
+      return true;
+    }
+  } catch (err) {
+    console.error("Failed to load public storefront:", err);
+  }
+  return false;
+}
+
+async function dismissOrbital() {
   if (orbitalDismissed) return;
   orbitalDismissed = true;
   orbitalScreen.classList.add("fade-out");
 
+  const foundPublicStore = await checkPublicStoreParam();
+
   setTimeout(() => {
     orbitalScreen.classList.add("hidden");
-    if (currentUser) {
-      openWorkspace();
+    if (foundPublicStore) {
+      openWorkspace(true);
+    } else if (currentUser) {
+      openWorkspace(false);
     } else {
       authScreen.classList.remove("hidden");
     }
@@ -83,29 +131,26 @@ function dismissOrbital() {
 }
 
 orbitalScreen.addEventListener("click", dismissOrbital);
-orbitalScreen.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" || e.key === " ") dismissOrbital();
-});
 
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
-  if (user) {
+  if (user && !isBuyerMode) {
     try {
       const snap = await getDoc(doc(db, "stores", user.uid));
       if (snap.exists()) {
         storeData = { ...storeData, ...snap.data() };
       }
     } catch (err) {
-      console.error("Failed to load store from Firestore:", err);
+      console.error("Failed to load store:", err);
     }
     if (orbitalDismissed) {
-      openWorkspace();
+      openWorkspace(false);
     }
   }
 });
 
 // =========================================================
-// 2. FIREBASE SIGN UP & SIGN IN
+// 2. AUTHENTICATION (SIGN UP & SIGN IN)
 // =========================================================
 const showSignupBtn = document.getElementById("show-signup-btn");
 const showSigninBtn = document.getElementById("show-signin-btn");
@@ -151,13 +196,14 @@ signupForm.addEventListener("submit", async (e) => {
       storeName,
       slug: `${slugify(storeName)}-${cred.user.uid.slice(0, 5)}`,
       branches,
-      products: storeData.products || [],
-      orders: storeData.orders || [],
-      jobs: storeData.jobs || []
+      bankDetails: { bankName: "", accountNumber: "", accountName: "" },
+      products: [],
+      orders: [],
+      jobs: []
     };
 
     await setDoc(doc(db, "stores", cred.user.uid), storeData);
-    openWorkspace();
+    openWorkspace(false);
   } catch (err) {
     alert(err.message);
   }
@@ -176,18 +222,15 @@ signinForm.addEventListener("submit", async (e) => {
     if (snap.exists()) {
       storeData = { ...storeData, ...snap.data() };
     }
-    openWorkspace();
+    openWorkspace(false);
   } catch (err) {
     alert(err.message);
   }
 });
 
-const demoBtn = document.getElementById("demo-access-btn");
-if (demoBtn) {
-  demoBtn.addEventListener("click", () => {
-    openWorkspace();
-  });
-}
+document.getElementById("demo-access-btn")?.addEventListener("click", () => {
+  openWorkspace(false);
+});
 
 document.getElementById("signout-btn").addEventListener("click", async () => {
   await signOut(auth);
@@ -196,26 +239,45 @@ document.getElementById("signout-btn").addEventListener("click", async () => {
   authScreen.classList.remove("hidden");
 });
 
-document.getElementById("account-pill-btn").addEventListener("click", () => {
-  switchCategory("business");
+document.getElementById("exit-buyer-mode-btn").addEventListener("click", () => {
+  window.history.replaceState({}, "", window.location.pathname);
+  isBuyerMode = false;
+  publicStoreDocId = null;
+  appShell.classList.add("hidden");
+  authScreen.classList.remove("hidden");
 });
 
-function openWorkspace() {
+document.getElementById("account-pill-btn").addEventListener("click", () => {
+  if (!isBuyerMode) switchCategory("business");
+});
+
+function openWorkspace(buyerView) {
+  isBuyerMode = Boolean(buyerView);
   authScreen.classList.add("hidden");
   appShell.classList.remove("hidden");
 
   document.getElementById("header-store-name").textContent = storeData.storeName;
   document.getElementById("header-store-slug").textContent = `kova.shop/${storeData.slug}`;
-  document.getElementById("account-pill-btn").textContent = storeData.ownerName;
+  document.getElementById("account-pill-btn").textContent = isBuyerMode ? "Shopper" : storeData.ownerName;
 
-  syncBranchSelectors();
+  document.getElementById("buyer-banner").classList.toggle("hidden", !isBuyerMode);
+  document.getElementById("merchant-nav").classList.toggle("hidden", isBuyerMode);
+
+  if (isBuyerMode) {
+    switchCategory("market");
+  } else {
+    switchCategory("blast");
+    syncBranchSelectors();
+    hydrateBankInputs();
+    renderBusinessPro();
+    renderHiring();
+  }
+
   renderMarketplace();
-  renderBusinessPro();
-  renderHiring();
 }
 
 // =========================================================
-// 3. CATEGORY NAVIGATION
+// 3. CATEGORY NAVIGATION & STORE LINK SHARING
 // =========================================================
 function switchCategory(viewName) {
   document.querySelectorAll(".cat-pill").forEach((pill) => {
@@ -230,9 +292,57 @@ document.querySelectorAll(".cat-pill").forEach((pill) => {
   pill.addEventListener("click", () => switchCategory(pill.dataset.view));
 });
 
+document.getElementById("share-store-btn").addEventListener("click", async () => {
+  const link = `${window.location.origin}${window.location.pathname}?store=${storeData.slug}`;
+  try {
+    await navigator.clipboard.writeText(link);
+    alert(`Public storefront link copied:\n${link}`);
+  } catch {
+    alert(`Share this storefront link:\n${link}`);
+  }
+});
+
 // =========================================================
-// 4. UPLOAD ONCE & BLAST TO ALL SOCIALS (FIRESTORE)
+// 4. PRODUCT PHOTO COMPRESSION + SOCIAL BLAST & SHORTCUTS
 // =========================================================
+const photoInput = document.getElementById("prod-photo");
+const photoPreview = document.getElementById("prod-photo-preview");
+
+photoInput.addEventListener("change", () => {
+  const file = photoInput.files?.[0];
+  if (!file) {
+    pendingPhotoDataUrl = "";
+    photoPreview.classList.add("hidden");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const maxDim = 640;
+      let { width, height } = img;
+      if (width > height && width > maxDim) {
+        height = Math.round((height * maxDim) / width);
+        width = maxDim;
+      } else if (height > maxDim) {
+        width = Math.round((width * maxDim) / height);
+        height = maxDim;
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      pendingPhotoDataUrl = canvas.toDataURL("image/jpeg", 0.72);
+      photoPreview.src = pendingPhotoDataUrl;
+      photoPreview.classList.remove("hidden");
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+
 document.getElementById("product-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const title = document.getElementById("prod-title").value.trim();
@@ -246,6 +356,9 @@ document.getElementById("product-form").addEventListener("submit", async (e) => 
   if (!title || !price) return;
 
   const selectedChannels = channels.length ? channels : ["Kova Store"];
+  const finalCaption = caption || `${title} is now live at ${storeData.storeName}!`;
+  const storeLink = `${window.location.origin}${window.location.pathname}?store=${storeData.slug}`;
+
   const newProduct = {
     id: "p_" + Date.now(),
     title,
@@ -253,7 +366,8 @@ document.getElementById("product-form").addEventListener("submit", async (e) => 
     category,
     branch,
     stock,
-    caption: caption || `${title} is now live at ${storeData.storeName}!`,
+    photo: pendingPhotoDataUrl,
+    caption: finalCaption,
     channels: selectedChannels
   };
 
@@ -264,14 +378,36 @@ document.getElementById("product-form").addEventListener("submit", async (e) => 
 
   const feedback = document.getElementById("blast-feedback");
   feedback.classList.remove("hidden");
-  feedback.innerHTML = `<strong>Blasted & Saved to Firebase!</strong> "${title}" (${naira(price)}) synced to <strong>${selectedChannels.join(", ")}</strong>.`;
+  feedback.innerHTML = `<strong>Blasted!</strong> "${title}" (${naira(price)}) added to ${branch} for <strong>${selectedChannels.join(", ")}</strong>.`;
+
+  const postText = `${title} — ${naira(price)}\n${finalCaption}\nOrder here: ${storeLink}`;
+  document.getElementById("social-post-preview").textContent = postText;
+  document.getElementById("whatsapp-share-link").href =
+    `https://wa.me/?text=${encodeURIComponent(postText)}`;
+  document.getElementById("social-shortcuts").classList.remove("hidden");
 
   e.target.reset();
   document.getElementById("prod-stock").value = "20";
+  pendingPhotoDataUrl = "";
+  photoPreview.classList.add("hidden");
+});
+
+document.getElementById("copy-social-btn").addEventListener("click", async () => {
+  const text = document.getElementById("social-post-preview").textContent || "";
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    document.getElementById("copy-social-btn").textContent = "Copied ✓";
+    setTimeout(() => {
+      document.getElementById("copy-social-btn").textContent = "Copy for TikTok / IG";
+    }, 1800);
+  } catch {
+    alert("Copy the caption text above.");
+  }
 });
 
 // =========================================================
-// 5. MARKETPLACE & ESCROW ORDERS
+// 5. MARKETPLACE & MANUAL ACCOUNT CHECKOUT
 // =========================================================
 const marketSearch = document.getElementById("market-search");
 const marketFilterCat = document.getElementById("market-filter-cat");
@@ -295,7 +431,7 @@ function renderMarketplace() {
   });
 
   if (!items.length) {
-    grid.innerHTML = `<p class="subtext">No items in your store catalog yet.</p>`;
+    grid.innerHTML = `<p class="subtext">No items available yet.</p>`;
     return;
   }
 
@@ -304,15 +440,16 @@ function renderMarketplace() {
       (p) => `
       <article class="product-card">
         <div>
+          ${p.photo ? `<img src="${p.photo}" alt="${p.title}" class="prod-img" />` : ""}
           <div class="prod-tag">${p.category} • ${p.branch}</div>
           <h3 class="prod-title">${p.title}</h3>
           <p class="prod-caption">${p.caption || ""}</p>
-          <div class="prod-channels">Live on: ${(p.channels || []).join(" · ")}</div>
+          <div class="prod-channels">Channels: ${(p.channels || []).join(" · ")}</div>
         </div>
         <div>
           <div class="prod-price-row">
             <span class="prod-price">${naira(p.price)}</span>
-            <span class="prod-stock">${p.stock} in stock</span>
+            <span class="prod-stock">${p.stock} left</span>
           </div>
           <button type="button" class="btn-glow" onclick="window.openCheckout('${p.id}')" ${p.stock <= 0 ? "disabled" : ""}>
             ${p.stock > 0 ? "Order with Escrow" : "Sold Out"}
@@ -333,11 +470,19 @@ window.openCheckout = function (productId) {
 
   activeCheckoutProductId = productId;
   checkoutMsg.textContent = "";
+
   document.getElementById("checkout-item-info").innerHTML = `
     <strong>${item.title}</strong>
     <div class="subtext" style="margin:4px 0;">Branch: ${item.branch}</div>
     <div class="prod-price">${naira(item.price)}</div>
   `;
+
+  const bank = storeData.bankDetails || {};
+  document.getElementById("checkout-bank-info").innerHTML =
+    bank.accountNumber
+      ? `<strong>Transfer To:</strong><br/>Bank: <strong>${bank.bankName || "Not set"}</strong><br/>Account No: <strong>${bank.accountNumber}</strong><br/>Account Name: <strong>${bank.accountName || storeData.storeName}</strong>`
+      : `<strong>Manual Account:</strong> Store owner has not added bank details yet in Business Pro.`;
+
   checkoutModal.classList.remove("hidden");
 };
 
@@ -346,23 +491,11 @@ document.getElementById("close-checkout-btn").addEventListener("click", () => {
   activeCheckoutProductId = null;
 });
 
-document.getElementById("copy-link-btn").addEventListener("click", async () => {
-  const item = storeData.products.find((p) => p.id === activeCheckoutProductId);
-  if (!item) return;
-  const link = `${window.location.origin}${window.location.pathname}?store=${storeData.slug}&item=${item.id}`;
-  try {
-    await navigator.clipboard.writeText(link);
-    checkoutMsg.textContent = `Copied link: ${link}`;
-  } catch {
-    checkoutMsg.textContent = `Checkout link: ${link}`;
-  }
-});
-
 document.getElementById("confirm-order-btn").addEventListener("click", async () => {
   const item = storeData.products.find((p) => p.id === activeCheckoutProductId);
   if (!item || item.stock <= 0) return;
 
-  const buyer = document.getElementById("buyer-name").value.trim() || "Verified Buyer";
+  const buyer = document.getElementById("buyer-name").value.trim() || "Buyer";
   const note = document.getElementById("buyer-note").value.trim() || item.branch;
 
   item.stock -= 1;
@@ -372,21 +505,39 @@ document.getElementById("confirm-order-btn").addEventListener("click", async () 
     amount: item.price,
     buyer,
     note,
-    status: "In Escrow"
+    status: "Awaiting Verification"
   });
 
   await persistStore();
   renderMarketplace();
-  renderBusinessPro();
+  if (!isBuyerMode) renderBusinessPro();
 
-  checkoutMsg.textContent = `Escrow order saved to Firebase for ${buyer}!`;
+  checkoutMsg.textContent = `Order recorded! ${storeData.storeName} will verify your transfer shortly.`;
   document.getElementById("buyer-name").value = "";
   document.getElementById("buyer-note").value = "";
 });
 
 // =========================================================
-// 6. BUSINESS PRO (BRANCHES, KPIs, LEDGER & BACKUP)
+// 6. BUSINESS PRO (MANUAL ACCOUNT SETUP, BRANCHES, KPIs & BACKUP)
 // =========================================================
+function hydrateBankInputs() {
+  const bank = storeData.bankDetails || {};
+  document.getElementById("bank-name").value = bank.bankName || "";
+  document.getElementById("bank-number").value = bank.accountNumber || "";
+  document.getElementById("bank-holder").value = bank.accountName || "";
+}
+
+document.getElementById("bank-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  storeData.bankDetails = {
+    bankName: document.getElementById("bank-name").value.trim(),
+    accountNumber: document.getElementById("bank-number").value.trim(),
+    accountName: document.getElementById("bank-holder").value.trim()
+  };
+  await persistStore();
+  document.getElementById("bank-msg").textContent = "Manual account details saved.";
+});
+
 function syncBranchSelectors() {
   const optionsHtml = (storeData.branches || []).map((b) => `<option value="${b}">${b}</option>`).join("");
   document.getElementById("prod-branch").innerHTML = optionsHtml;
@@ -436,82 +587,5 @@ function renderBusinessPro() {
 
   const ledger = document.getElementById("orders-ledger");
   if (!storeData.orders?.length) {
-    ledger.innerHTML = `<p class="subtext">No escrow orders yet.</p>`;
+    ledger.innerHTML = `<p class="subtext">No orders yet.</p>`;
     return;
-  }
-
-  ledger.innerHTML = storeData.orders
-    .map(
-      (o) => `
-      <div class="list-row">
-        <div>
-          <strong>${o.id} • ${o.productTitle}</strong>
-          <div class="subtext" style="margin:2px 0 0;">${o.buyer} (${o.note})</div>
-        </div>
-        <div style="text-align:right;">
-          <div class="prod-price" style="font-size:0.9rem;">${naira(o.amount)}</div>
-          <span class="badge-live">${o.status}</span>
-        </div>
-      </div>
-    `
-    )
-    .join("");
-}
-
-document.getElementById("export-data-btn").addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify(storeData, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${storeData.slug || "kova"}-firebase-backup.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-});
-
-// =========================================================
-// 7. KOVA TALENT / HIRING HUB
-// =========================================================
-document.getElementById("job-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const title = document.getElementById("job-title").value.trim();
-  const branch = document.getElementById("job-branch").value.trim();
-  if (!title || !branch) return;
-
-  storeData.jobs.unshift({ id: "j_" + Date.now(), title, branch, applied: false });
-  await persistStore();
-  renderHiring();
-  e.target.reset();
-});
-
-function renderHiring() {
-  const list = document.getElementById("jobs-container");
-  if (!storeData.jobs?.length) {
-    list.innerHTML = `<p class="subtext">No open roles posted yet.</p>`;
-    return;
-  }
-
-  list.innerHTML = storeData.jobs
-    .map(
-      (j) => `
-      <div class="list-row">
-        <div>
-          <strong>${j.title}</strong>
-          <div class="subtext" style="margin:2px 0 0;">${storeData.storeName} • ${j.branch}</div>
-        </div>
-        <button type="button" class="btn-secondary" onclick="window.toggleApplyJob('${j.id}')">
-          ${j.applied ? "Applied ✓" : "1-Click Apply"}
-        </button>
-      </div>
-    `
-    )
-    .join("");
-}
-
-window.toggleApplyJob = async function (jobId) {
-  const job = storeData.jobs.find((j) => j.id === jobId);
-  if (!job) return;
-  job.applied = true;
-  await persistStore();
-  renderHiring();
-};
-                            

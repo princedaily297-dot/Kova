@@ -19,6 +19,9 @@
     <div class="glass-mesh"></div>
   </div>
 
+  <!-- FLOATING GLASS TOAST -->
+  <div id="kova-toast" class="kova-toast hidden" role="status" aria-live="polite"></div>
+
   <!-- SCREEN 1: FULL-SCREEN KOVA ORBITAL SPLASH -->
   <div id="orbital-screen" class="orbital-screen" role="button" tabindex="0" aria-label="Tap anywhere to enter Kova">
     <div class="orbital-stage">
@@ -44,8 +47,9 @@
     <div class="auth-wrapper">
       <div class="auth-brand">
         <div class="mini-orb">K</div>
+        <span class="hero-chip">OMNICHANNEL RETAIL OS</span>
         <h1>Welcome to KOVA</h1>
-        <p>Run your multi-branch store, blast every social channel at once, and scale effortlessly.</p>
+        <p>Run your multi-branch store, blast every social channel at once, and verify transfers effortlessly.</p>
       </div>
 
       <div class="glass-card auth-card">
@@ -64,12 +68,18 @@
             <input id="reg-email" type="email" placeholder="owner@brand.com" required />
           </div>
           <div class="field">
-            <label for="reg-store">Brand / Store Name</label>
-            <input id="reg-store" type="text" placeholder="e.g. Kova Prime Mart" required />
+            <label for="reg-password">Create Password</label>
+            <input id="reg-password" type="password" minlength="6" placeholder="Min. 6 characters" required />
           </div>
-          <div class="field">
-            <label for="reg-branch">Primary Branch Location</label>
-            <input id="reg-branch" type="text" placeholder="e.g. Ota Express / Ikeja" value="Ota Express" required />
+          <div class="row-2">
+            <div class="field">
+              <label for="reg-store">Brand / Store Name</label>
+              <input id="reg-store" type="text" placeholder="e.g. Kova Prime" required />
+            </div>
+            <div class="field">
+              <label for="reg-branch">Primary Branch</label>
+              <input id="reg-branch" type="text" placeholder="e.g. Ota Express" value="Ota Express" required />
+            </div>
           </div>
           <button type="submit" class="btn-glow">Get Started &amp; Launch Store</button>
         </form>
@@ -78,6 +88,10 @@
           <div class="field">
             <label for="login-email">Registered Email</label>
             <input id="login-email" type="email" placeholder="owner@brand.com" required />
+          </div>
+          <div class="field">
+            <label for="login-password">Password</label>
+            <input id="login-password" type="password" placeholder="Enter your password" required />
           </div>
           <button type="submit" class="btn-glow">Access My Dashboard</button>
           <button type="button" id="demo-access-btn" class="btn-ghost">Continue with Demo Store</button>
@@ -93,19 +107,22 @@
       <div class="topbar-row">
         <div class="brand-cluster">
           <div class="mini-orb sm">K</div>
-          <div>
+          <div class="brand-meta">
             <div class="store-title" id="header-store-name">Kova Prime Mart</div>
             <div class="store-url" id="header-store-slug">kova.shop/kova-prime-mart</div>
           </div>
         </div>
         <div class="header-actions">
-          <button type="button" id="share-store-btn" class="account-pill">Share Store</button>
+          <button type="button" id="share-store-btn" class="account-pill accent">Share Store</button>
           <button type="button" id="account-pill-btn" class="account-pill">Account</button>
         </div>
       </div>
 
       <div id="buyer-banner" class="buyer-banner hidden">
-        <span>Public Buyer Storefront</span>
+        <div class="buyer-banner-info">
+          <span class="verified-dot"></span>
+          <span>Verified Kova Storefront • Escrow &amp; Direct Transfer</span>
+        </div>
         <button type="button" id="exit-buyer-mode-btn" class="btn-ghost sm">Merchant Login</button>
       </div>
 
@@ -120,14 +137,16 @@
     <main class="workspace">
       <!-- VIEW 1: UPLOAD ONCE & BLAST TO ALL SOCIALS + PHOTO -->
       <section id="view-blast" class="view-section active">
-        <div class="glass-card">
+        <div class="glass-card hero-card">
           <div class="section-head">
-            <h2>Omnichannel Social Blast</h2>
-            <span class="badge-live">All Channels Linked</span>
+            <div>
+              <h2>Omnichannel Social Blast</h2>
+              <p class="subtext" style="margin-bottom:0;">Publish once to your storefront and generate instant WhatsApp, TikTok &amp; IG posts.</p>
+            </div>
+            <span class="badge-live">Live Sync</span>
           </div>
-          <p class="subtext">Attach a product photo, publish to your store, and generate instant social share posts.</p>
 
-          <form id="product-form" class="form-stack">
+          <form id="product-form" class="form-stack" style="margin-top:14px;">
             <div class="row-2">
               <div class="field">
                 <label for="prod-title">Product Name</label>
@@ -160,14 +179,14 @@
             </div>
 
             <div class="field">
-              <label for="prod-photo">Product Photo (Optional)</label>
+              <label for="prod-photo">Product Photo (Auto-compressed for fast loading)</label>
               <input id="prod-photo" type="file" accept="image/*" />
               <img id="prod-photo-preview" class="photo-preview hidden" alt="Product preview" />
             </div>
 
             <div class="field">
               <label for="prod-caption">Promo Caption</label>
-              <textarea id="prod-caption" rows="2" placeholder="Limited drop! Tap our Kova link to order with escrow protection."></textarea>
+              <textarea id="prod-caption" rows="2" placeholder="Limited drop! Tap our Kova link to order now."></textarea>
             </div>
 
             <div class="social-toggles">
@@ -195,6 +214,16 @@
 
       <!-- VIEW 2: SLEEK CONSUMER MARKETPLACE -->
       <section id="view-market" class="view-section">
+        <div id="store-policy-card" class="glass-card policy-strip hidden">
+          <div class="policy-top">
+            <div>
+              <strong id="policy-store-title">Verified Merchant</strong>
+              <p class="subtext" id="policy-store-note" style="margin:2px 0 0;">Fast dispatch &amp; branch pickup available.</p>
+            </div>
+            <a id="store-whatsapp-contact" class="btn-secondary sm hidden" target="_blank" rel="noopener">Chat Seller</a>
+          </div>
+        </div>
+
         <div class="market-toolbar">
           <input id="market-search" type="search" placeholder="Search items or branches..." />
           <select id="market-filter-cat">
@@ -214,7 +243,7 @@
       <section id="view-business" class="view-section">
         <div class="kpi-grid">
           <div class="kpi-box">
-            <span class="kpi-label">Escrow Revenue</span>
+            <span class="kpi-label">Confirmed Revenue</span>
             <strong class="kpi-val" id="kpi-revenue">₦0</strong>
           </div>
           <div class="kpi-box">
@@ -226,14 +255,25 @@
             <strong class="kpi-val" id="kpi-units">0</strong>
           </div>
           <div class="kpi-box">
-            <span class="kpi-label">Active Orders</span>
+            <span class="kpi-label">Total Orders</span>
             <strong class="kpi-val" id="kpi-orders">0</strong>
           </div>
         </div>
 
+        <!-- Escrow Orders Ledger with Verification Controls -->
         <div class="glass-card">
-          <h2>Manual Settlement Account Details</h2>
-          <p class="subtext">Enter your bank account details manually so buyers can transfer directly during escrow checkout.</p>
+          <div class="section-head">
+            <h2>Escrow Orders Ledger</h2>
+            <span class="badge-live">Real-Time</span>
+          </div>
+          <p class="subtext">Verify incoming bank transfers, mark orders delivered, or cancel to restore branch stock.</p>
+          <div id="orders-ledger" class="stack-list"></div>
+        </div>
+
+        <!-- Manual Settlement Account & WhatsApp Support -->
+        <div class="glass-card">
+          <h2>Settlement Account &amp; Store Contact</h2>
+          <p class="subtext">Buyers see these details during checkout and can send payment proof to your WhatsApp.</p>
           <form id="bank-form" class="form-stack">
             <div class="row-2">
               <div class="field">
@@ -245,15 +285,25 @@
                 <input id="bank-number" type="text" inputmode="numeric" placeholder="0123456789" />
               </div>
             </div>
-            <div class="field">
-              <label for="bank-holder">Account Name</label>
-              <input id="bank-holder" type="text" placeholder="e.g. Kova Prime Mart Ltd" />
+            <div class="row-2">
+              <div class="field">
+                <label for="bank-holder">Account Name</label>
+                <input id="bank-holder" type="text" placeholder="e.g. Kova Prime Mart Ltd" />
+              </div>
+              <div class="field">
+                <label for="store-whatsapp">Merchant WhatsApp (234...)</label>
+                <input id="store-whatsapp" type="tel" placeholder="e.g. 2348012345678" />
+              </div>
             </div>
-            <button type="submit" class="btn-secondary">Save Account Details</button>
+            <div class="field">
+              <label for="store-delivery-note">Delivery &amp; Pickup Policy</label>
+              <input id="store-delivery-note" type="text" placeholder="e.g. Same-day delivery in Lagos & Ota • Pickup available" />
+            </div>
+            <button type="submit" class="btn-secondary">Save Account &amp; Store Info</button>
           </form>
-          <p id="bank-msg" class="subtext" style="color:#34d399;margin-top:8px;"></p>
         </div>
 
+        <!-- Multi-Branch Command -->
         <div class="glass-card">
           <h2>Multi-Branch Command</h2>
           <form id="add-branch-form" class="inline-form">
@@ -266,17 +316,14 @@
             <select id="transfer-dest"></select>
             <button type="submit" class="btn-secondary">Move Stock</button>
           </form>
-          <p id="branch-msg" class="subtext" style="color:#34d399;margin-top:8px;"></p>
+
+          <div id="branch-chips" class="chip-wrap" style="margin-top:12px;"></div>
         </div>
 
-        <div class="glass-card">
-          <h2>Escrow Orders Ledger</h2>
-          <div id="orders-ledger" class="stack-list"></div>
-        </div>
-
+        <!-- Data & Catalogue Export / Sign Out -->
         <div class="glass-card">
           <h2>Store Vault &amp; Data Backup</h2>
-          <p class="subtext">Your profile, bank details, photos, branches, and orders sync with Firebase.</p>
+          <p class="subtext">All store data syncs live with Firebase Cloud Firestore.</p>
           <div class="action-row">
             <button type="button" id="export-data-btn" class="btn-secondary">Download Backup (.json)</button>
             <button type="button" id="signout-btn" class="btn-danger">Switch / Sign Out</button>
@@ -315,11 +362,44 @@
         <input id="buyer-name" type="text" placeholder="Your Name or WhatsApp Number" />
         <input id="buyer-note" type="text" placeholder="Delivery Address or Sender Name" />
         <button type="button" id="confirm-order-btn" class="btn-glow">I Have Sent Transfer — Submit Order</button>
+        <a id="proof-whatsapp-btn" class="btn-secondary hidden" target="_blank" rel="noopener">Send Transfer Proof on WhatsApp</a>
       </div>
-      <p id="checkout-msg" class="subtext" style="color:#34d399;margin-top:8px;"></p>
+      <p id="checkout-msg" class="subtext" style="color:#6ee7b7;margin-top:8px;"></p>
+    </div>
+  </div>
+
+  <!-- EDIT PRODUCT MODAL -->
+  <div id="edit-product-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="glass-card modal-box">
+      <div class="section-head">
+        <h3>Edit Product</h3>
+        <button type="button" id="close-edit-btn" class="btn-ghost sm">✕</button>
+      </div>
+      <form id="edit-product-form" class="form-stack" style="margin-top:10px;">
+        <div class="field">
+          <label for="edit-prod-title">Product Title</label>
+          <input id="edit-prod-title" type="text" required />
+        </div>
+        <div class="row-2">
+          <div class="field">
+            <label for="edit-prod-price">Price (₦)</label>
+            <input id="edit-prod-price" type="number" min="1" required />
+          </div>
+          <div class="field">
+            <label for="edit-prod-stock">Stock Count</label>
+            <input id="edit-prod-stock" type="number" min="0" required />
+          </div>
+        </div>
+        <div class="field">
+          <label for="edit-prod-branch">Branch</label>
+          <select id="edit-prod-branch"></select>
+        </div>
+        <button type="submit" class="btn-glow">Save Changes</button>
+      </form>
     </div>
   </div>
 
   <script type="module" src="app.js"></script>
 </body>
-</html>
+  </html>
+                                                                                    

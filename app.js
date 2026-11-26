@@ -33,7 +33,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let currentUser = null;
-let sessionLockedIn = false;
+let isOpeningWorkspace = false;
 let activeCheckoutProductId = null;
 let editingProductId = null;
 let pendingPhotoDataUrl = "";
@@ -190,16 +190,6 @@ const appShell = document.getElementById("app-shell");
 
 let orbitalDismissed = false;
 
-function lockIntoWorkspace(buyerView = false) {
-  if (!buyerView) {
-    sessionLockedIn = true;
-  }
-  orbitalScreen.classList.add("hidden");
-  authScreen.classList.add("hidden");
-  appShell.classList.remove("hidden");
-  openWorkspace(buyerView);
-}
-
 async function checkPublicStoreParam() {
   try {
     const params = new URLSearchParams(window.location.search);
@@ -234,8 +224,8 @@ function dismissOrbital() {
 
   setTimeout(() => {
     orbitalScreen.classList.add("hidden");
-    if ((currentUser || sessionLockedIn) && !isBuyerMode) {
-      lockIntoWorkspace(false);
+    if (currentUser && !isBuyerMode) {
+      openWorkspace(false);
     } else {
       authScreen.classList.remove("hidden");
     }
@@ -244,9 +234,10 @@ function dismissOrbital() {
   setTimeout(async () => {
     const foundPublic = await checkPublicStoreParam();
     if (foundPublic) {
-      lockIntoWorkspace(true);
-    } else if ((currentUser || sessionLockedIn) && !isBuyerMode) {
-      lockIntoWorkspace(false);
+      authScreen.classList.add("hidden");
+      openWorkspace(true);
+    } else if (currentUser && !isBuyerMode) {
+      openWorkspace(false);
     }
   }, 240);
 }
@@ -263,23 +254,17 @@ orbitalScreen.addEventListener("keydown", (e) => {
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   if (user && !isBuyerMode) {
-    sessionLockedIn = true;
-    if (orbitalDismissed) {
-      lockIntoWorkspace(false);
-    }
     try {
       const snap = await withTimeout(getDoc(doc(db, "stores", user.uid)), 3000);
       if (snap && snap.exists()) {
         storeData = { ...storeData, ...snap.data() };
-        if (orbitalDismissed) {
-          lockIntoWorkspace(false);
-        }
       }
     } catch (err) {
       console.warn("Auth store fetch warning:", err);
     }
-  } else if (!user && !isBuyerMode) {
-    sessionLockedIn = false;
+    if (orbitalDismissed) {
+      openWorkspace(false);
+    }
   }
 });
 
@@ -319,10 +304,8 @@ signupForm.addEventListener("submit", async (e) => {
   }
 
   try {
-    showToast("Creating store...");
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     currentUser = cred.user;
-    sessionLockedIn = true;
     const branches = storeData.branches.includes(primaryBranch)
       ? storeData.branches
       : [primaryBranch, ...storeData.branches];
@@ -343,7 +326,7 @@ signupForm.addEventListener("submit", async (e) => {
     const { orders, ...storePayload } = storeData;
     await setDoc(doc(db, "stores", cred.user.uid), storePayload);
     showToast("Store launched!");
-    lockIntoWorkspace(false);
+    openWorkspace(false);
   } catch (err) {
     showToast(err.message || "Sign up failed", true);
   }
@@ -356,36 +339,30 @@ signinForm.addEventListener("submit", async (e) => {
   if (!password) return;
 
   try {
-    showToast("Signing in...");
     const cred = await signInWithEmailAndPassword(auth, email, password);
     currentUser = cred.user;
-    sessionLockedIn = true;
-    lockIntoWorkspace(false);
-    showToast("Welcome back!");
-
     try {
       const snap = await withTimeout(getDoc(doc(db, "stores", cred.user.uid)), 3000);
       if (snap && snap.exists()) {
         storeData = { ...storeData, ...snap.data() };
-        lockIntoWorkspace(false);
       }
     } catch (fetchErr) {
-      console.warn("Sign-in store refresh warning:", fetchErr);
+      console.warn("Sign-in store fetch warning:", fetchErr);
     }
+    showToast("Welcome back!");
+    openWorkspace(false);
   } catch (err) {
     showToast(err.message || "Sign in failed", true);
   }
 });
 
 document.getElementById("demo-access-btn")?.addEventListener("click", () => {
-  sessionLockedIn = true;
-  lockIntoWorkspace(false);
+  openWorkspace(false);
   showToast("Opened Demo Store");
 });
 
 document.getElementById("signout-btn").addEventListener("click", async () => {
   cleanupListeners();
-  sessionLockedIn = false;
   try {
     await signOut(auth);
   } catch {}
@@ -431,9 +408,14 @@ function updateStorePolicyBanner() {
 
 function openWorkspace(buyerView) {
   isBuyerMode = Boolean(buyerView);
-  if (!isBuyerMode) {
-    sessionLockedIn = true;
+  if (isOpeningWorkspace && !buyerView) return;
+  if (!buyerView) {
+    isOpeningWorkspace = true;
+    setTimeout(() => {
+      isOpeningWorkspace = false;
+    }, 400);
   }
+
   orbitalScreen.classList.add("hidden");
   authScreen.classList.add("hidden");
   appShell.classList.remove("hidden");
@@ -630,4 +612,14 @@ function renderMarketplace() {
           ${p.photo ? `<img src="${p.photo}" alt="${p.title}" class="prod-img" />` : ""}
           <div class="prod-tag">${p.category} • ${p.branch}</div>
           <h3 class="prod-title">${p.title}</h3>
-          <p class="prod-c
+          <p class="prod-caption">${p.caption || ""}</p>
+          <div class="prod-channels">Channels: ${(p.channels || []).join(" · ")}</div>
+        </div>
+        <div>
+          <div class="prod-price-row">
+            <span class="prod-price">${naira(p.price)}</span>
+            <span class="prod-stock">${p.stock} left</span>
+          </div>
+          <div class="card-btn-row">
+            <button type="button" class="btn-glow" onclick="window.openCheckout('${p.id}')" ${p.stock <= 0 ? "disabled" : ""}>
+              ${p.stock > 0 ? "Order Now" : "Sold Ou

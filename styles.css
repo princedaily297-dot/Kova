@@ -1,19 +1,19 @@
 :root {
   --font-display: "Space Grotesk", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
-  --bg: #050811;
-  --glass: rgba(15, 23, 42, 0.56);
-  --glass-strong: rgba(19, 30, 54, 0.76);
-  --glass-elevated: rgba(26, 40, 71, 0.72);
+  --bg: #040710;
+  --glass: rgba(14, 22, 40, 0.58);
+  --glass-heavy: rgba(10, 16, 30, 0.84);
   --border-glass: rgba(255, 255, 255, 0.14);
-  --border-shine: rgba(110, 231, 183, 0.34);
+  --border-top: rgba(255, 255, 255, 0.3);
   --text: #f8fafc;
-  --muted: #a5b4fc;
-  --muted-soft: #94a3b8;
+  --muted: #94a3b8;
   --emerald: #10b981;
   --emerald-bright: #34d399;
   --cyan: #22d3ee;
   --violet: #818cf8;
+  --amber: #fbbf24;
+  --rose: #fb7185;
   --ink: #02160f;
 }
 
@@ -34,7 +34,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, .core-logo, .store-title, .kpi-val, .prod-price, .cat-pill, .switch-btn {
+h1, h2, h3, .core-logo, .store-title, .kpi-val, .prod-price, .cat-pill, .switch-btn, .hero-chip {
   font-family: var(--font-display);
 }
 
@@ -51,40 +51,40 @@ h1, h2, h3, .core-logo, .store-title, .kpi-val, .prod-price, .cat-pill, .switch-
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  background: radial-gradient(circle at 50% -10%, #102a38 0%, #070b16 58%, #04060d 100%);
+  background: radial-gradient(circle at 50% -15%, #123344 0%, #060a14 55%, #03050b 100%);
 }
 
 .glow-orb {
   position: absolute;
   border-radius: 50%;
   filter: blur(85px);
-  opacity: 0.48;
+  opacity: 0.54;
   animation: floatOrb 12s ease-in-out infinite alternate;
 }
 
 .orb-emerald {
-  width: 340px;
-  height: 340px;
-  top: -70px;
+  width: 350px;
+  height: 350px;
+  top: -80px;
   left: -70px;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.75), transparent 70%);
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.8), transparent 70%);
 }
 
 .orb-cyan {
-  width: 300px;
-  height: 300px;
-  top: 24%;
-  right: -80px;
-  background: radial-gradient(circle, rgba(34, 211, 238, 0.65), transparent 70%);
+  width: 310px;
+  height: 310px;
+  top: 22%;
+  right: -85px;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.7), transparent 70%);
   animation-delay: -4s;
 }
 
 .orb-violet {
-  width: 360px;
-  height: 360px;
-  bottom: -90px;
-  left: 18%;
-  background: radial-gradient(circle, rgba(129, 140, 248, 0.55), transparent 70%);
+  width: 370px;
+  height: 370px;
+  bottom: -95px;
+  left: 16%;
+  background: radial-gradient(circle, rgba(129, 140, 248, 0.58), transparent 70%);
   animation-delay: -8s;
 }
 
@@ -92,15 +92,42 @@ h1, h2, h3, .core-logo, .store-title, .kpi-val, .prod-price, .cat-pill, .switch-
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 32px 32px;
-  mask-image: radial-gradient(circle at center, black 35%, transparent 88%);
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 30px 30px;
+  mask-image: radial-gradient(circle at center, black 38%, transparent 90%);
 }
 
 @keyframes floatOrb {
   0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(22px, 28px) scale(1.12); }
+  100% { transform: translate(24px, 30px) scale(1.12); }
+}
+
+/* =========================================================
+   FLOATING GLASS TOAST
+   ========================================================= */
+.kova-toast {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 120;
+  max-width: min(92vw, 420px);
+  padding: 11px 16px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.92), rgba(6, 95, 70, 0.95));
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 24px rgba(16, 185, 129, 0.45);
+  text-align: center;
+}
+
+.kova-toast.error {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.94), rgba(159, 18, 57, 0.96));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 24px rgba(244, 63, 94, 0.45);
 }
 
 /* =========================================================
@@ -110,7 +137,7 @@ h1, h2, h3, .core-logo, .store-title, .kpi-val, .prod-price, .cat-pill, .switch-
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: radial-gradient(circle at 50% 42%, rgba(16, 185, 129, 0.22) 0%, rgba(15, 23, 42, 0.85) 48%, rgba(4, 6, 13, 0.96) 100%);
+  background: radial-gradient(circle at 50% 42%, rgba(16, 185, 129, 0.25) 0%, rgba(12, 19, 36, 0.86) 48%, rgba(3, 5, 11, 0.97) 100%);
   backdrop-filter: blur(22px);
   display: flex;
   flex-direction: column;
@@ -120,7 +147,7 @@ h1, h2, h3, .core-logo, .store-title, .kpi-val, .prod-price, .cat-pill, .switch-
   cursor: pointer;
   user-select: none;
   overflow: hidden;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.28s ease, transform 0.28s ease;
 }
 
 .orbital-screen.fade-out {
@@ -172,39 +199,22 @@ h1, h2, h3, .core-logo, .store-title, .kpi-val, .prod-price, .cat-pill, .switch-
   box-shadow: 0 0 18px var(--emerald-bright), 0 0 32px rgba(52, 211, 153, 0.6);
 }
 
-.dot-1 {
-  top: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.dot-2 {
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--cyan);
-  box-shadow: 0 0 18px var(--cyan);
-}
-
-.dot-3 {
-  top: 50%;
-  right: -6px;
-  transform: translateY(-50%);
-  background: #a5f3fc;
-}
+.dot-1 { top: -6px; left: 50%; transform: translateX(-50%); }
+.dot-2 { bottom: -6px; left: 50%; transform: translateX(-50%); background: var(--cyan); box-shadow: 0 0 18px var(--cyan); }
+.dot-3 { top: 50%; right: -6px; transform: translateY(-50%); background: #a5f3fc; }
 
 .orbital-core {
   width: 45%;
   height: 45%;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.45) 0%, transparent 45%),
-    linear-gradient(145deg, rgba(52, 211, 153, 0.92), rgba(5, 150, 105, 0.95) 65%, rgba(6, 78, 59, 0.98));
-  border: 1.5px solid rgba(255, 255, 255, 0.45);
+    radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.5) 0%, transparent 45%),
+    linear-gradient(145deg, rgba(52, 211, 153, 0.94), rgba(5, 150, 105, 0.96) 65%, rgba(6, 78, 59, 0.99));
+  border: 1.5px solid rgba(255, 255, 255, 0.48);
   box-shadow:
-    0 0 55px rgba(16, 185, 129, 0.65),
+    0 0 58px rgba(16, 185, 129, 0.68),
     0 12px 35px rgba(0, 0, 0, 0.55),
-    inset 0 2px 14px rgba(255, 255, 255, 0.4);
+    inset 0 2px 14px rgba(255, 255, 255, 0.45);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -247,26 +257,13 @@ h1, h2, h3, .core-logo, .store-title, .kpi-val, .prod-price, .cat-pill, .switch-
   right: 0;
   text-align: center;
   font-size: 0.78rem;
-  color: var(--muted-soft);
+  color: var(--muted);
 }
 
-@keyframes spinSlow {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes spinReverse {
-  to { transform: rotate(-360deg); }
-}
-
-@keyframes pulseCore {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.045); }
-}
-
-@keyframes blinkPrompt {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
+@keyframes spinSlow { to { transform: rotate(360deg); } }
+@keyframes spinReverse { to { transform: rotate(-360deg); } }
+@keyframes pulseCore { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+@keyframes blinkPrompt { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
 /* =========================================================
    2. AUTH / ONBOARDING SCREEN
@@ -292,22 +289,35 @@ h1, h2, h3, .core-logo, .store-title, .kpi-val, .prod-price, .cat-pill, .switch-
   margin-bottom: 20px;
 }
 
+.hero-chip {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.14);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: #6ee7b7;
+  margin-bottom: 8px;
+}
+
 .mini-orb {
-  width: 50px;
-  height: 50px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   margin: 0 auto 12px;
   background:
-    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.45), transparent 50%),
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.5), transparent 50%),
     linear-gradient(135deg, var(--emerald-bright), #059669);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   color: var(--ink);
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.3rem;
   display: grid;
   place-items: center;
-  box-shadow: 0 0 28px rgba(16, 185, 129, 0.45);
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.48);
 }
 
 .mini-orb.sm {
@@ -319,7 +329,7 @@ h1, h2, h3, .core-logo, .store-title, .kpi-val, .prod-price, .cat-pill, .switch-
 }
 
 .auth-brand h1 {
-  font-size: 1.65rem;
+  font-size: 1.7rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin-bottom: 6px;
@@ -327,14 +337,14 @@ h1, h2, h3, .core-logo, .store-title, .kpi-val, .prod-price, .cat-pill, .switch-
 
 .auth-brand p {
   font-size: 0.88rem;
-  color: var(--muted-soft);
+  color: var(--muted);
 }
 
 .auth-switch {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background: rgba(4, 7, 15, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(4, 7, 15, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   padding: 4px;
   border-radius: 13px;
   margin-bottom: 16px;
@@ -343,7 +353,7 @@ h1, h2, h3, .core-logo, .store-title, .kpi-val, .prod-price, .cat-pill, .switch-
 .switch-btn {
   background: transparent;
   border: none;
-  color: var(--muted-soft);
+  color: var(--muted);
   font-weight: 700;
   font-size: 0.84rem;
   padding: 9px;
@@ -363,17 +373,21 @@ h1, h2, h3, .core-logo, .store-title, .kpi-val, .prod-price, .cat-pill, .switch-
    ========================================================= */
 .glass-card {
   position: relative;
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.09) 0%, var(--glass) 45%, rgba(9, 14, 28, 0.72) 100%);
-  backdrop-filter: blur(22px) saturate(145%);
-  -webkit-backdrop-filter: blur(22px) saturate(145%);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.1) 0%, var(--glass) 46%, rgba(8, 13, 26, 0.78) 100%);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
   border: 1px solid var(--border-glass);
-  border-top-color: rgba(255, 255, 255, 0.28);
+  border-top-color: var(--border-top);
   border-radius: 20px;
   padding: 18px;
   margin-bottom: 14px;
   box-shadow:
-    0 18px 40px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    0 20px 44px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.hero-card {
+  border-color: rgba(110, 231, 183, 0.24);
 }
 
 .form-stack {
@@ -392,12 +406,11 @@ h1, h2, h3, .core-logo, .store-title, .kpi-val, .prod-price, .cat-pill, .switch-
   font-size: 0.78rem;
   font-weight: 600;
   color: #cbd5e1;
-  letter-spacing: 0.01em;
 }
 
 input, select, textarea {
   width: 100%;
-  background: rgba(7, 12, 24, 0.72);
+  background: rgba(6, 11, 22, 0.74);
   color: var(--text);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 12px;
@@ -409,9 +422,9 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus {
   outline: none;
-  background: rgba(11, 19, 36, 0.88);
+  background: rgba(11, 19, 36, 0.9);
   border-color: var(--emerald-bright);
-  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18);
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2);
 }
 
 .photo-preview {
@@ -419,13 +432,13 @@ input:focus, select:focus, textarea:focus {
   max-height: 190px;
   object-fit: cover;
   border-radius: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   margin-top: 6px;
 }
 
 .btn-glow {
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.38);
   border-radius: 13px;
   padding: 12px 16px;
   background: linear-gradient(135deg, #6ee7b7 0%, var(--emerald-bright) 42%, #059669 100%);
@@ -433,21 +446,18 @@ input:focus, select:focus, textarea:focus {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 0.92rem;
-  letter-spacing: 0.01em;
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-shadow:
-    0 8px 26px rgba(16, 185, 129, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    0 8px 26px rgba(16, 185, 129, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
   transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 
-.btn-glow:active {
-  transform: scale(0.985);
-}
+.btn-glow:active { transform: scale(0.985); }
 
 .btn-glow.sm {
   width: auto;
@@ -459,17 +469,26 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 12px;
   padding: 10px 14px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(15, 23, 42, 0.65));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.11), rgba(15, 23, 42, 0.68));
   backdrop-filter: blur(12px);
   color: var(--text);
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 0.84rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 
+.btn-secondary.sm {
+  padding: 7px 12px;
+  font-size: 0.78rem;
+}
+
 .btn-ghost {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: #cbd5e1;
   border-radius: 12px;
@@ -479,12 +498,12 @@ input:focus, select:focus, textarea:focus {
 }
 
 .btn-ghost.sm {
-  padding: 4px 10px;
+  padding: 5px 10px;
   font-size: 0.76rem;
 }
 
 .btn-danger {
-  border: 1px solid rgba(251, 113, 133, 0.38);
+  border: 1px solid rgba(251, 113, 133, 0.4);
   background: rgba(244, 63, 94, 0.16);
   color: #fecdd3;
   border-radius: 12px;
@@ -492,6 +511,11 @@ input:focus, select:focus, textarea:focus {
   font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+.btn-danger.sm {
+  padding: 6px 10px;
+  font-size: 0.76rem;
 }
 
 /* =========================================================
@@ -509,9 +533,9 @@ input:focus, select:focus, textarea:focus {
   position: sticky;
   top: 0;
   z-index: 30;
-  background: linear-gradient(180deg, rgba(13, 21, 38, 0.86) 0%, rgba(7, 11, 22, 0.78) 100%);
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  background: linear-gradient(180deg, rgba(13, 21, 38, 0.88) 0%, rgba(6, 10, 20, 0.8) 100%);
+  backdrop-filter: blur(22px) saturate(155%);
+  -webkit-backdrop-filter: blur(22px) saturate(155%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.14);
   padding: 12px 16px 10px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
@@ -526,10 +550,7 @@ input:focus, select:focus, textarea:focus {
   gap: 8px;
 }
 
-.header-actions {
-  display: flex;
-  gap: 6px;
-}
+.header-actions { display: flex; gap: 6px; }
 
 .brand-cluster {
   display: flex;
@@ -537,6 +558,8 @@ input:focus, select:focus, textarea:focus {
   gap: 10px;
   min-width: 0;
 }
+
+.brand-meta { min-width: 0; }
 
 .store-title {
   font-weight: 700;
@@ -567,11 +590,16 @@ input:focus, select:focus, textarea:focus {
   white-space: nowrap;
 }
 
+.account-pill.accent {
+  border-color: rgba(52, 211, 153, 0.45);
+  color: #a7f3d0;
+}
+
 .buyer-banner {
   max-width: 860px;
   margin: 0 auto 8px;
-  padding: 7px 12px;
-  border-radius: 11px;
+  padding: 8px 12px;
+  border-radius: 12px;
   background: rgba(34, 211, 238, 0.14);
   border: 1px solid rgba(34, 211, 238, 0.36);
   color: #cffafe;
@@ -579,6 +607,21 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+}
+
+.buyer-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.verified-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--emerald-bright);
+  box-shadow: 0 0 10px var(--emerald-bright);
 }
 
 .category-bar {
@@ -591,9 +634,7 @@ input:focus, select:focus, textarea:focus {
   scrollbar-width: none;
 }
 
-.category-bar::-webkit-scrollbar {
-  display: none;
-}
+.category-bar::-webkit-scrollbar { display: none; }
 
 .cat-pill {
   white-space: nowrap;
@@ -623,17 +664,12 @@ input:focus, select:focus, textarea:focus {
   padding: 16px;
 }
 
-.view-section {
-  display: none;
-}
-
-.view-section.active {
-  display: block;
-}
+.view-section { display: none; }
+.view-section.active { display: block; }
 
 .section-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 6px;
@@ -646,7 +682,7 @@ input:focus, select:focus, textarea:focus {
 
 .subtext {
   font-size: 0.83rem;
-  color: var(--muted-soft);
+  color: var(--muted);
   margin-bottom: 14px;
 }
 
@@ -658,6 +694,29 @@ input:focus, select:focus, textarea:focus {
   background: rgba(52, 211, 153, 0.16);
   border: 1px solid rgba(52, 211, 153, 0.35);
   color: #6ee7b7;
+  white-space: nowrap;
+}
+
+.badge-warn {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.16);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  color: #fde68a;
+  white-space: nowrap;
+}
+
+.badge-muted {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #cbd5e1;
+  white-space: nowrap;
 }
 
 .row-2 {
@@ -691,10 +750,7 @@ input:focus, select:focus, textarea:focus {
   cursor: pointer;
 }
 
-.toggle-chip input {
-  width: auto;
-  accent-color: var(--emerald);
-}
+.toggle-chip input { width: auto; accent-color: var(--emerald); }
 
 .feedback-banner {
   margin-top: 12px;
@@ -734,8 +790,17 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* =========================================================
-   5. COMPACT MARKETPLACE GRID
+   5. COMPACT MARKETPLACE GRID & STORE POLICY
    ========================================================= */
+.policy-strip { padding: 13px 16px; }
+
+.policy-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .market-toolbar {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
@@ -745,32 +810,32 @@ input:focus, select:focus, textarea:focus {
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 12px;
 }
 
 .product-card {
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.09), var(--glass) 50%, rgba(9, 14, 28, 0.76));
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.1), var(--glass) 50%, rgba(8, 13, 26, 0.8));
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
   border: 1px solid var(--border-glass);
-  border-top-color: rgba(255, 255, 255, 0.25);
+  border-top-color: rgba(255, 255, 255, 0.28);
   border-radius: 18px;
   padding: 14px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 10px;
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.44);
 }
 
 .prod-img {
   width: 100%;
-  height: 145px;
+  height: 150px;
   object-fit: cover;
   border-radius: 12px;
   margin-bottom: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .prod-tag {
@@ -788,7 +853,7 @@ input:focus, select:focus, textarea:focus {
 
 .prod-caption {
   font-size: 0.8rem;
-  color: var(--muted-soft);
+  color: var(--muted);
 }
 
 .prod-channels {
@@ -812,122 +877,30 @@ input:focus, select:focus, textarea:focus {
 
 .prod-stock {
   font-size: 0.75rem;
-  color: var(--muted-soft);
+  color: var(--muted);
+}
+
+.card-btn-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+}
+
+.merchant-card-tools {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.merchant-card-tools button {
+  flex: 1;
 }
 
 /* =========================================================
-   6. BUSINESS PRO KPIs, LEDGER & HIRING
+   6. BUSINESS PRO KPIs, LEDGER, CHIPS & HIRING
    ========================================================= */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
-  margin-bottom: 14px;
-}
-
-@media (min-width: 640px) {
-  .kpi-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.kpi-box {
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.09), var(--glass));
-  backdrop-filter: blur(18px);
-  border: 1px solid var(--border-glass);
-  border-top-color: rgba(255, 255, 255, 0.24);
-  border-radius: 16px;
-  padding: 13px;
-}
-
-.kpi-label {
-  display: block;
-  font-size: 0.74rem;
-  color: var(--muted-soft);
-}
-
-.kpi-val {
-  font-size: 1.18rem;
-  font-weight: 700;
-  color: var(--emerald-bright);
-}
-
-.inline-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.inline-form input, .inline-form select {
-  flex: 1 1 150px;
-}
-
-.stack-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.list-row {
-  background: rgba(8, 14, 28, 0.68);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 13px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.action-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.app-footer {
-  text-align: center;
-  padding: 18px 16px;
-  font-size: 0.78rem;
-  color: var(--muted-soft);
-  background: rgba(6, 10, 20, 0.65);
-  backdrop-filter: blur(14px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* =========================================================
-   7. MODAL & MANUAL BANK BOX
-   ========================================================= */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  background: rgba(3, 6, 14, 0.76);
-  backdrop-filter: blur(10px);
-  display: grid;
-  place-items: center;
-  padding: 16px;
-}
-
-.modal-box {
-  width: 100%;
-  max-width: 420px;
-}
-
-.checkout-summary {
-  background: rgba(8, 14, 28, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 13px;
-  padding: 12px;
-  margin-top: 8px;
-}
-
-.bank-box {
-  background: rgba(16, 185, 129, 0.14);
-  border: 1px solid rgba(110, 231, 183, 0.36);
-  border-radius: 13px;
-  padding: 11px 12px;
-  margin-top: 10px;
-  font-size: 0.82rem;
-    }
-  
+  margin-bot

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kova — Storefront, Social Blast &amp; Hiring Hub</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <span class="brand-badge">K</span>
+        <div>
+          <strong>Kova</strong>
+          <small id="store-slug-label">kova.shop/prime-mart</small>
+        </div>
+      </div>
+
+      <nav class="tabs" role="tablist" aria-label="Kova Sections">
+        <button type="button" class="tab active" data-tab="merchant">Store &amp; Social Blast</button>
+        <button type="button" class="tab" data-tab="marketplace">Marketplace</button>
+        <button type="button" class="tab" data-tab="hiring">Hiring</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container main-content">
+    <!-- STORE SETUP & ONE-CLICK SOCIAL BLAST -->
+    <section id="tab-merchant" class="tab-panel active">
+      <div class="card">
+        <h2>Store Setup &amp; Connected Channels</h2>
+        <div class="grid-2">
+          <label>
+            Store Name
+            <input id="store-name-input" type="text" value="Kova Prime Mart" />
+          </label>
+          <label>
+            Active Branch
+            <select id="branch-select">
+              <option value="Ota Express">Ota Express</option>
+              <option value="Ikeja Flagship">Ikeja Flagship</option>
+              <option value="Lekki Hub">Lekki Hub</option>
+            </select>
+          </label>
+        </div>
+        <div class="channel-pills">
+          <span class="pill connected">WhatsApp Business: Connected</span>
+          <span class="pill connected">TikTok: Connected</span>
+          <span class="pill connected">Instagram: Connected</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Upload Once &amp; Blast Everywhere</h2>
+        <form id="product-form" class="stack">
+          <div class="grid-2">
+            <label>
+              Product Title
+              <input id="product-title" type="text" placeholder="e.g. Wireless Noise-Canceling Pods" required />
+            </label>
+            <label>
+              Price (₦)
+              <input id="product-price" type="number" min="1" placeholder="25000" required />
+            </label>
+          </div>
+
+          <div class="grid-2">
+            <label>
+              Category
+              <select id="product-category">
+                <option value="Electronics">Electronics</option>
+                <option value="Fashion">Fashion</option>
+                <option value="Groceries">Groceries</option>
+                <option value="Beauty">Beauty</option>
+              </select>
+            </label>
+            <label>
+              Branch Stock Qty
+              <input id="product-stock" type="number" min="1" value="15" required />
+            </label>
+          </div>
+
+          <label>
+            Promo Caption (for Storefront &amp; Socials)
+            <textarea id="product-caption" rows="2" placeholder="Fresh stock just landed. Order directly on Kova!"></textarea>
+          </label>
+
+          <div class="checkbox-row">
+            <span class="group-label">Blast to:</span>
+            <label class="inline-check"><input type="checkbox" name="channel" value="Kova Store" checked /> Kova Store</label>
+            <label class="inline-check"><input type="checkbox" name="channel" value="WhatsApp" checked /> WhatsApp</label>
+            <label class="inline-check"><input type="checkbox" name="channel" value="TikTok" checked /> TikTok</label>
+            <label class="inline-check"><input type="checkbox" name="channel" value="Instagram" /> Instagram</label>
+          </div>
+
+          <button type="submit" class="btn-primary">Publish &amp; Blast Product</button>
+        </form>
+
+        <div id="blast-log" class="blast-log" aria-live="polite"></div>
+        <div id="share-box" class="share-box hidden">
+          <div class="share-header">
+            <strong>Ready-to-Post Social Caption &amp; Link</strong>
+            <button type="button" id="copy-share-btn" class="btn-secondary">Copy Post</button>
+          </div>
+          <pre id="share-text"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONSUMER MARKETPLACE -->
+    <section id="tab-marketplace" class="tab-panel">
+      <div class="card">
+        <div class="market-header">
+          <div>
+            <h2>Kova Consumer Marketplace</h2>
+            <p class="muted">Browse products across store branches and place escrow orders.</p>
+          </div>
+          <div class="order-counter">Escrow Orders: <strong id="order-count">0</strong></div>
+        </div>
+
+        <div class="grid-2 filter-row">
+          <input id="market-search" type="search" placeholder="Search products or captions..." />
+          <select id="market-category">
+            <option value="All">All Categories</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Groceries">Groceries</option>
+            <option value="Beauty">Beauty</option>
+          </select>
+        </div>
+
+        <div id="product-list" class="cards-grid"></div>
+      </div>
+    </section>
+
+    <!-- HIRING BOARD -->
+    <section id="tab-hiring" class="tab-panel">
+      <div class="card">
+        <h2>Post a Store Role</h2>
+        <form id="job-form" class="grid-3">
+          <input id="job-title" type="text" placeholder="Role (e.g. TikTok Live Host)" required />
+          <input id="job-location" type="text" placeholder="Location (e.g. Ota / Ikeja)" required />
+          <button type="submit" class="btn-primary">Post Job</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Open Roles on Kova</h2>
+        <div id="job-list" class="stack"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+  </html>
+  

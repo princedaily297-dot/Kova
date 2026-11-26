@@ -65,6 +65,13 @@ function slugify(str) {
   );
 }
 
+function withTimeout(promise, ms = 2500) {
+  return Promise.race([
+    promise,
+    new Promise((resolve) => setTimeout(() => resolve(null), ms))
+  ]);
+}
+
 function getTargetStoreRef() {
   if (isBuyerMode && publicStoreDocId) {
     return doc(db, "stores", publicStoreDocId);
@@ -78,11 +85,15 @@ function getTargetStoreRef() {
 async function persistStore() {
   const ref = getTargetStoreRef();
   if (!ref) return;
-  await setDoc(ref, storeData, { merge: true });
+  try {
+    await setDoc(ref, storeData, { merge: true });
+  } catch (err) {
+    console.error("Firestore save error:", err);
+  }
 }
 
 // =========================================================
-// 1. PUBLIC STOREFRONT CHECK (?store=slug) & ORBITAL SPLASH
+// 1. INSTANT ORBITAL EXIT (NEVER STUCK)
 // =========================================================
 const orbitalScreen = document.getElementById("orbital-screen");
 const authScreen = document.getElementById("auth-screen");
@@ -97,8 +108,8 @@ async function checkPublicStoreParam() {
 
   try {
     const q = query(collection(db, "stores"), where("slug", "==", storeSlug));
-    const snap = await getDocs(q);
-    if (!snap.empty) {
+    const snap = await withTimeout(getDocs(q), 2500);
+    if (snap && !snap.empty) {
       const firstDoc = snap.docs[0];
       publicStoreDocId = firstDoc.id;
       storeData = { ...storeData, ...firstDoc.data() };
@@ -111,39 +122,54 @@ async function checkPublicStoreParam() {
   return false;
 }
 
-async function dismissOrbital() {
+function dismissOrbital() {
   if (orbitalDismissed) return;
   orbitalDismissed = true;
   orbitalScreen.classList.add("fade-out");
 
-  const foundPublicStore = await checkPublicStoreParam();
-
+  // Transition immediately so the screen never stalls on network calls
   setTimeout(() => {
     orbitalScreen.classList.add("hidden");
-    if (foundPublicStore) {
-      openWorkspace(true);
-    } else if (currentUser) {
+    if (currentUser) {
       openWorkspace(false);
     } else {
       authScreen.classList.remove("hidden");
     }
-  }, 420);
+  }, 280);
+
+  // Resolve public store link or existing session in background
+  (async () => {
+    const foundPublic = await checkPublicStoreParam();
+    if (foundPublic) {
+      authScreen.classList.add("hidden");
+      openWorkspace(true);
+    } else if (currentUser) {
+      authScreen.classList.add("hidden");
+      openWorkspace(false);
+    }
+  })();
 }
 
 orbitalScreen.addEventListener("click", dismissOrbital);
+orbitalScreen.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    dismissOrbital();
+  }
+});
 
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   if (user && !isBuyerMode) {
     try {
-      const snap = await getDoc(doc(db, "stores", user.uid));
-      if (snap.exists()) {
+      const snap = await withTimeout(getDoc(doc(db, "stores", user.uid)), 3000);
+      if (snap && snap.exists()) {
         storeData = { ...storeData, ...snap.data() };
       }
     } catch (err) {
       console.error("Failed to load store:", err);
     }
-    if (orbitalDismissed) {
+    if (orbitalDismissed && !authScreen.classList.contains("hidden")) {
       openWorkspace(false);
     }
   }
@@ -233,7 +259,9 @@ document.getElementById("demo-access-btn")?.addEventListener("click", () => {
 });
 
 document.getElementById("signout-btn").addEventListener("click", async () => {
-  await signOut(auth);
+  try {
+    await signOut(auth);
+  } catch {}
   currentUser = null;
   appShell.classList.add("hidden");
   authScreen.classList.remove("hidden");
@@ -589,3 +617,79 @@ function renderBusinessPro() {
   if (!storeData.orders?.length) {
     ledger.innerHTML = `<p class="subtext">No orders yet.</p>`;
     return;
+  }
+
+  ledger.innerHTML = storeData.orders
+    .map(
+      (o) => `
+      <div class="list-row">
+        <div>
+          <strong>${o.id} • ${o.productTitle}</strong>
+          <div class="subtext" style="margin:2px 0 0;">${o.buyer} (${o.note})</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="prod-price" style="font-size:0.9rem;">${naira(o.amount)}</div>
+          <span class="badge-live">${o.status}</span>
+        </div>
+      </div>
+    `
+    )
+    .join("");
+}
+
+document.getElementById("export-data-btn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(storeData, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${storeData.slug || "kova"}-backup.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// =========================================================
+// 7. KOVA TALENT / HIRING HUB
+// =========================================================
+document.getElementById("job-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const title = document.getElementById("job-title").value.trim();
+  const branch = document.getElementById("job-branch").value.trim();
+  if (!title || !branch) return;
+
+  storeData.jobs.unshift({ id: "j_" + Date.now(), title, branch, applied: false });
+  await persistStore();
+  renderHiring();
+  e.target.reset();
+});
+
+function renderHiring() {
+  const list = document.getElementById("jobs-container");
+  if (!storeData.jobs?.length) {
+    list.innerHTML = `<p class="subtext">No open roles posted yet.</p>`;
+    return;
+  }
+
+  list.innerHTML = storeData.jobs
+    .map(
+      (j) => `
+      <div class="list-row">
+        <div>
+          <strong>${j.title}</strong>
+          <div class="subtext" style="margin:2px 0 0;">${storeData.storeName} • ${j.branch}</div>
+        </div>
+        <button type="button" class="btn-secondary" onclick="window.toggleApplyJob('${j.id}')">
+          ${j.applied ? "Applied ✓" : "1-Click Apply"}
+        </button>
+      </div>
+    `
+    )
+    .join("");
+}
+
+window.toggleApplyJob = async function (jobId) {
+  const job = storeData.jobs.find((j) => j.id === jobId);
+  if (!job) return;
+  job.applied = true;
+  await persistStore();
+  renderHiring();
+};

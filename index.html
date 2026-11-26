@@ -50,8 +50,8 @@
             <input id="reg-name" type="text" placeholder="e.g. Alex Adeyemi" required />
           </div>
           <div class="field">
-            <label for="reg-email">Business Email or Phone</label>
-            <input id="reg-email" type="text" placeholder="owner@brand.com" required />
+            <label for="reg-email">Business Email</label>
+            <input id="reg-email" type="email" placeholder="owner@brand.com" required />
           </div>
           <div class="field">
             <label for="reg-store">Brand / Store Name</label>
@@ -67,8 +67,8 @@
         <!-- SIGN IN FORM -->
         <form id="signin-form" class="form-stack hidden">
           <div class="field">
-            <label for="login-email">Registered Email or Phone</label>
-            <input id="login-email" type="text" placeholder="owner@brand.com" required />
+            <label for="login-email">Registered Email</label>
+            <input id="login-email" type="email" placeholder="owner@brand.com" required />
           </div>
           <button type="submit" class="btn-glow">Access My Dashboard</button>
           <button type="button" id="demo-access-btn" class="btn-ghost">Continue with Demo Store</button>
@@ -226,7 +226,7 @@
         <!-- Data & Catalogue Export / Import -->
         <div class="glass-card">
           <h2>Store Vault &amp; Data Backup</h2>
-          <p class="subtext">Your profile, catalogue, branches, and orders auto-save on this device. Export a JSON backup anytime.</p>
+          <p class="subtext">Your profile, catalogue, branches, and orders sync with Firebase. Export a JSON backup anytime.</p>
           <div class="action-row">
             <button type="button" id="export-data-btn" class="btn-secondary">Download Catalogue Backup (.json)</button>
             <button type="button" id="signout-btn" class="btn-danger">Switch / Sign Out</button>
@@ -270,7 +270,7 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
-                                           </html>
-        
+                                                                                                                                     </html>
+          

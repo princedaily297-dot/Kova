@@ -11,10 +11,13 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
+  deleteDoc,
   collection,
   query,
   where,
-  getDocs
+  getDocs,
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -32,9 +35,13 @@ const db = getFirestore(app);
 
 let currentUser = null;
 let activeCheckoutProductId = null;
+let editingProductId = null;
 let pendingPhotoDataUrl = "";
 let isBuyerMode = false;
 let publicStoreDocId = null;
+let unsubscribeStore = null;
+let unsubscribeOrders = null;
+let toastTimer = null;
 
 let storeData = {
   ownerName: "Store Owner",
@@ -46,10 +53,22 @@ let storeData = {
     accountNumber: "",
     accountName: ""
   },
+  whatsappNumber: "",
+  deliveryNote: "Same-day dispatch & branch pickup available.",
   products: [],
   orders: [],
   jobs: []
 };
+
+function showToast(msg, isError = false) {
+  const el = document.getElementById("kova-toast");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.toggle("error", Boolean(isError));
+  el.classList.remove("hidden");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add("hidden"), 3200);
+}
 
 function naira(val) {
   return "₦" + Number(val || 0).toLocaleString("en-NG");
@@ -72,28 +91,75 @@ function withTimeout(promise, ms = 2500) {
   ]);
 }
 
-function getTargetStoreRef() {
-  if (isBuyerMode && publicStoreDocId) {
-    return doc(db, "stores", publicStoreDocId);
-  }
-  if (currentUser) {
-    return doc(db, "stores", currentUser.uid);
-  }
+function getActiveStoreId() {
+  if (isBuyerMode && publicStoreDocId) return publicStoreDocId;
+  if (currentUser) return currentUser.uid;
   return null;
 }
 
 async function persistStore() {
-  const ref = getTargetStoreRef();
-  if (!ref) return;
+  const storeId = getActiveStoreId();
+  if (!storeId) return;
   try {
-    await setDoc(ref, storeData, { merge: true });
+    const { orders, ...storePayload } = storeData;
+    await setDoc(doc(db, "stores", storeId), storePayload, { merge: true });
   } catch (err) {
     console.error("Firestore save error:", err);
   }
 }
 
+function cleanupListeners() {
+  if (unsubscribeStore) {
+    unsubscribeStore();
+    unsubscribeStore = null;
+  }
+  if (unsubscribeOrders) {
+    unsubscribeOrders();
+    unsubscribeOrders = null;
+  }
+}
+
+function bindRealtimeStore(storeId, buyerView) {
+  cleanupListeners();
+
+  unsubscribeStore = onSnapshot(doc(db, "stores", storeId), (snap) => {
+    if (!snap.exists()) return;
+    const incoming = snap.data();
+    storeData = {
+      ...storeData,
+      ...incoming,
+      bankDetails: incoming.bankDetails || storeData.bankDetails,
+      products: incoming.products || [],
+      jobs: incoming.jobs || [],
+      branches: incoming.branches || ["Ota Express"]
+    };
+
+    document.getElementById("header-store-name").textContent = storeData.storeName;
+    document.getElementById("header-store-slug").textContent = `kova.shop/${storeData.slug}`;
+    renderMarketplace();
+    updateStorePolicyBanner();
+
+    if (!buyerView) {
+      syncBranchSelectors();
+      hydrateBankInputs();
+      renderBusinessPro();
+      renderHiring();
+    }
+  });
+
+  if (!buyerView) {
+    unsubscribeOrders = onSnapshot(collection(db, "stores", storeId, "orders"), (snap) => {
+      const liveOrders = snap.docs
+        .map((d) => ({ docId: d.id, ...d.data() }))
+        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      storeData.orders = liveOrders;
+      renderBusinessPro();
+    });
+  }
+}
+
 // =========================================================
-// 1. INSTANT ORBITAL EXIT (NEVER STUCK)
+// 1. INSTANT ORBITAL EXIT & PUBLIC STORE CHECK
 // =========================================================
 const orbitalScreen = document.getElementById("orbital-screen");
 const authScreen = document.getElementById("auth-screen");
@@ -104,16 +170,20 @@ let orbitalDismissed = false;
 async function checkPublicStoreParam() {
   const params = new URLSearchParams(window.location.search);
   const storeSlug = params.get("store");
+  const focusItem = params.get("item");
   if (!storeSlug) return false;
 
   try {
     const q = query(collection(db, "stores"), where("slug", "==", storeSlug));
-    const snap = await withTimeout(getDocs(q), 2500);
+    const snap = await withTimeout(getDocs(q), 2800);
     if (snap && !snap.empty) {
       const firstDoc = snap.docs[0];
       publicStoreDocId = firstDoc.id;
       storeData = { ...storeData, ...firstDoc.data() };
       isBuyerMode = true;
+      if (focusItem) {
+        setTimeout(() => window.openCheckout(focusItem), 350);
+      }
       return true;
     }
   } catch (err) {
@@ -127,7 +197,6 @@ function dismissOrbital() {
   orbitalDismissed = true;
   orbitalScreen.classList.add("fade-out");
 
-  // Transition immediately so the screen never stalls on network calls
   setTimeout(() => {
     orbitalScreen.classList.add("hidden");
     if (currentUser) {
@@ -135,9 +204,8 @@ function dismissOrbital() {
     } else {
       authScreen.classList.remove("hidden");
     }
-  }, 280);
+  }, 260);
 
-  // Resolve public store link or existing session in background
   (async () => {
     const foundPublic = await checkPublicStoreParam();
     if (foundPublic) {
@@ -201,12 +269,12 @@ signupForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const ownerName = document.getElementById("reg-name").value.trim();
   const email = document.getElementById("reg-email").value.trim();
+  const password = document.getElementById("reg-password").value;
   const storeName = document.getElementById("reg-store").value.trim();
   const primaryBranch = document.getElementById("reg-branch").value.trim() || "Ota Express";
-  const password = prompt("Create a password (at least 6 characters):");
 
   if (!password || password.length < 6) {
-    alert("Password must be at least 6 characters.");
+    showToast("Password must be at least 6 characters.", true);
     return;
   }
 
@@ -223,22 +291,26 @@ signupForm.addEventListener("submit", async (e) => {
       slug: `${slugify(storeName)}-${cred.user.uid.slice(0, 5)}`,
       branches,
       bankDetails: { bankName: "", accountNumber: "", accountName: "" },
+      whatsappNumber: "",
+      deliveryNote: "Same-day dispatch & branch pickup available.",
       products: [],
       orders: [],
       jobs: []
     };
 
-    await setDoc(doc(db, "stores", cred.user.uid), storeData);
+    const { orders, ...storePayload } = storeData;
+    await setDoc(doc(db, "stores", cred.user.uid), storePayload);
+    showToast("Store launched!");
     openWorkspace(false);
   } catch (err) {
-    alert(err.message);
+    showToast(err.message, true);
   }
 });
 
 signinForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const email = document.getElementById("login-email").value.trim();
-  const password = prompt("Enter your password:");
+  const password = document.getElementById("login-password").value;
   if (!password) return;
 
   try {
@@ -248,26 +320,31 @@ signinForm.addEventListener("submit", async (e) => {
     if (snap.exists()) {
       storeData = { ...storeData, ...snap.data() };
     }
+    showToast("Welcome back!");
     openWorkspace(false);
   } catch (err) {
-    alert(err.message);
+    showToast(err.message, true);
   }
 });
 
 document.getElementById("demo-access-btn")?.addEventListener("click", () => {
   openWorkspace(false);
+  showToast("Opened Demo Store");
 });
 
 document.getElementById("signout-btn").addEventListener("click", async () => {
+  cleanupListeners();
   try {
     await signOut(auth);
   } catch {}
   currentUser = null;
   appShell.classList.add("hidden");
   authScreen.classList.remove("hidden");
+  showToast("Signed out");
 });
 
 document.getElementById("exit-buyer-mode-btn").addEventListener("click", () => {
+  cleanupListeners();
   window.history.replaceState({}, "", window.location.pathname);
   isBuyerMode = false;
   publicStoreDocId = null;
@@ -278,6 +355,27 @@ document.getElementById("exit-buyer-mode-btn").addEventListener("click", () => {
 document.getElementById("account-pill-btn").addEventListener("click", () => {
   if (!isBuyerMode) switchCategory("business");
 });
+
+function updateStorePolicyBanner() {
+  const card = document.getElementById("store-policy-card");
+  if (!isBuyerMode) {
+    card.classList.add("hidden");
+    return;
+  }
+  card.classList.remove("hidden");
+  document.getElementById("policy-store-title").textContent = `${storeData.storeName} • Official Store`;
+  document.getElementById("policy-store-note").textContent =
+    storeData.deliveryNote || "Fast dispatch & branch pickup available.";
+
+  const waBtn = document.getElementById("store-whatsapp-contact");
+  const cleanWa = String(storeData.whatsappNumber || "").replace(/[^0-9]/g, "");
+  if (cleanWa) {
+    waBtn.href = `https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hello ${storeData.storeName}, I'm browsing your Kova store!`)}`;
+    waBtn.classList.remove("hidden");
+  } else {
+    waBtn.classList.add("hidden");
+  }
+}
 
 function openWorkspace(buyerView) {
   isBuyerMode = Boolean(buyerView);
@@ -290,6 +388,13 @@ function openWorkspace(buyerView) {
 
   document.getElementById("buyer-banner").classList.toggle("hidden", !isBuyerMode);
   document.getElementById("merchant-nav").classList.toggle("hidden", isBuyerMode);
+
+  const activeId = getActiveStoreId();
+  if (activeId) {
+    bindRealtimeStore(activeId, isBuyerMode);
+  }
+
+  updateStorePolicyBanner();
 
   if (isBuyerMode) {
     switchCategory("market");
@@ -324,9 +429,9 @@ document.getElementById("share-store-btn").addEventListener("click", async () =>
   const link = `${window.location.origin}${window.location.pathname}?store=${storeData.slug}`;
   try {
     await navigator.clipboard.writeText(link);
-    alert(`Public storefront link copied:\n${link}`);
+    showToast("Public storefront link copied!");
   } catch {
-    alert(`Share this storefront link:\n${link}`);
+    prompt("Copy your public storefront link:", link);
   }
 });
 
@@ -385,10 +490,11 @@ document.getElementById("product-form").addEventListener("submit", async (e) => 
 
   const selectedChannels = channels.length ? channels : ["Kova Store"];
   const finalCaption = caption || `${title} is now live at ${storeData.storeName}!`;
-  const storeLink = `${window.location.origin}${window.location.pathname}?store=${storeData.slug}`;
+  const productId = "p_" + Date.now();
+  const itemLink = `${window.location.origin}${window.location.pathname}?store=${storeData.slug}&item=${productId}`;
 
   const newProduct = {
-    id: "p_" + Date.now(),
+    id: productId,
     title,
     price,
     category,
@@ -403,15 +509,15 @@ document.getElementById("product-form").addEventListener("submit", async (e) => 
   await persistStore();
   renderMarketplace();
   renderBusinessPro();
+  showToast(`"${title}" published!`);
 
   const feedback = document.getElementById("blast-feedback");
   feedback.classList.remove("hidden");
   feedback.innerHTML = `<strong>Blasted!</strong> "${title}" (${naira(price)}) added to ${branch} for <strong>${selectedChannels.join(", ")}</strong>.`;
 
-  const postText = `${title} — ${naira(price)}\n${finalCaption}\nOrder here: ${storeLink}`;
+  const postText = `${title} — ${naira(price)}\n${finalCaption}\nOrder direct: ${itemLink}`;
   document.getElementById("social-post-preview").textContent = postText;
-  document.getElementById("whatsapp-share-link").href =
-    `https://wa.me/?text=${encodeURIComponent(postText)}`;
+  document.getElementById("whatsapp-share-link").href = `https://wa.me/?text=${encodeURIComponent(postText)}`;
   document.getElementById("social-shortcuts").classList.remove("hidden");
 
   e.target.reset();
@@ -425,17 +531,14 @@ document.getElementById("copy-social-btn").addEventListener("click", async () =>
   if (!text) return;
   try {
     await navigator.clipboard.writeText(text);
-    document.getElementById("copy-social-btn").textContent = "Copied ✓";
-    setTimeout(() => {
-      document.getElementById("copy-social-btn").textContent = "Copy for TikTok / IG";
-    }, 1800);
+    showToast("Social post copied!");
   } catch {
-    alert("Copy the caption text above.");
+    showToast("Copy the post text above.", true);
   }
 });
 
 // =========================================================
-// 5. MARKETPLACE & MANUAL ACCOUNT CHECKOUT
+// 5. MARKETPLACE, EDIT/DELETE & MANUAL ACCOUNT CHECKOUT
 // =========================================================
 const marketSearch = document.getElementById("market-search");
 const marketFilterCat = document.getElementById("market-filter-cat");
@@ -479,9 +582,20 @@ function renderMarketplace() {
             <span class="prod-price">${naira(p.price)}</span>
             <span class="prod-stock">${p.stock} left</span>
           </div>
-          <button type="button" class="btn-glow" onclick="window.openCheckout('${p.id}')" ${p.stock <= 0 ? "disabled" : ""}>
-            ${p.stock > 0 ? "Order with Escrow" : "Sold Out"}
-          </button>
+          <div class="card-btn-row">
+            <button type="button" class="btn-glow" onclick="window.openCheckout('${p.id}')" ${p.stock <= 0 ? "disabled" : ""}>
+              ${p.stock > 0 ? "Order Now" : "Sold Out"}
+            </button>
+            <button type="button" class="btn-secondary" title="Copy Item Link" onclick="window.copyItemLink('${p.id}')">Link</button>
+          </div>
+          ${
+            !isBuyerMode
+              ? `<div class="merchant-card-tools">
+                  <button type="button" class="btn-ghost sm" onclick="window.openEditProduct('${p.id}')">Edit</button>
+                  <button type="button" class="btn-danger sm" onclick="window.deleteProduct('${p.id}')">Delete</button>
+                </div>`
+              : ""
+          }
         </div>
       </article>
     `
@@ -489,207 +603,21 @@ function renderMarketplace() {
     .join("");
 }
 
-const checkoutModal = document.getElementById("checkout-modal");
-const checkoutMsg = document.getElementById("checkout-msg");
+window.copyItemLink = async function (productId) {
+  const link = `${window.location.origin}${window.location.pathname}?store=${storeData.slug}&item=${productId}`;
+  try {
+    await navigator.clipboard.writeText(link);
+    showToast("Direct item link copied!");
+  } catch {
+    prompt("Copy item link:", link);
+  }
+};
 
-window.openCheckout = function (productId) {
+const editModal = document.getElementById("edit-product-modal");
+
+window.openEditProduct = function (productId) {
   const item = storeData.products.find((p) => p.id === productId);
-  if (!item || item.stock <= 0) return;
-
-  activeCheckoutProductId = productId;
-  checkoutMsg.textContent = "";
-
-  document.getElementById("checkout-item-info").innerHTML = `
-    <strong>${item.title}</strong>
-    <div class="subtext" style="margin:4px 0;">Branch: ${item.branch}</div>
-    <div class="prod-price">${naira(item.price)}</div>
-  `;
-
-  const bank = storeData.bankDetails || {};
-  document.getElementById("checkout-bank-info").innerHTML =
-    bank.accountNumber
-      ? `<strong>Transfer To:</strong><br/>Bank: <strong>${bank.bankName || "Not set"}</strong><br/>Account No: <strong>${bank.accountNumber}</strong><br/>Account Name: <strong>${bank.accountName || storeData.storeName}</strong>`
-      : `<strong>Manual Account:</strong> Store owner has not added bank details yet in Business Pro.`;
-
-  checkoutModal.classList.remove("hidden");
-};
-
-document.getElementById("close-checkout-btn").addEventListener("click", () => {
-  checkoutModal.classList.add("hidden");
-  activeCheckoutProductId = null;
-});
-
-document.getElementById("confirm-order-btn").addEventListener("click", async () => {
-  const item = storeData.products.find((p) => p.id === activeCheckoutProductId);
-  if (!item || item.stock <= 0) return;
-
-  const buyer = document.getElementById("buyer-name").value.trim() || "Buyer";
-  const note = document.getElementById("buyer-note").value.trim() || item.branch;
-
-  item.stock -= 1;
-  storeData.orders.unshift({
-    id: "ORD-" + String(Date.now()).slice(-5),
-    productTitle: item.title,
-    amount: item.price,
-    buyer,
-    note,
-    status: "Awaiting Verification"
-  });
-
-  await persistStore();
-  renderMarketplace();
-  if (!isBuyerMode) renderBusinessPro();
-
-  checkoutMsg.textContent = `Order recorded! ${storeData.storeName} will verify your transfer shortly.`;
-  document.getElementById("buyer-name").value = "";
-  document.getElementById("buyer-note").value = "";
-});
-
-// =========================================================
-// 6. BUSINESS PRO (MANUAL ACCOUNT SETUP, BRANCHES, KPIs & BACKUP)
-// =========================================================
-function hydrateBankInputs() {
-  const bank = storeData.bankDetails || {};
-  document.getElementById("bank-name").value = bank.bankName || "";
-  document.getElementById("bank-number").value = bank.accountNumber || "";
-  document.getElementById("bank-holder").value = bank.accountName || "";
-}
-
-document.getElementById("bank-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  storeData.bankDetails = {
-    bankName: document.getElementById("bank-name").value.trim(),
-    accountNumber: document.getElementById("bank-number").value.trim(),
-    accountName: document.getElementById("bank-holder").value.trim()
-  };
-  await persistStore();
-  document.getElementById("bank-msg").textContent = "Manual account details saved.";
-});
-
-function syncBranchSelectors() {
-  const optionsHtml = (storeData.branches || []).map((b) => `<option value="${b}">${b}</option>`).join("");
-  document.getElementById("prod-branch").innerHTML = optionsHtml;
-  document.getElementById("transfer-dest").innerHTML = optionsHtml;
-  document.getElementById("transfer-item").innerHTML = (storeData.products || [])
-    .map((p) => `<option value="${p.id}">${p.title} (${p.branch})</option>`)
-    .join("");
-}
-
-document.getElementById("add-branch-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const input = document.getElementById("new-branch-name");
-  const name = input.value.trim();
-  if (!name || storeData.branches.includes(name)) return;
-
-  storeData.branches.push(name);
-  await persistStore();
-  syncBranchSelectors();
-  document.getElementById("branch-msg").textContent = `Added branch "${name}".`;
-  input.value = "";
-});
-
-document.getElementById("transfer-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const itemId = document.getElementById("transfer-item").value;
-  const dest = document.getElementById("transfer-dest").value;
-  const product = storeData.products.find((p) => p.id === itemId);
-  if (!product) return;
-
-  product.branch = dest;
-  await persistStore();
-  syncBranchSelectors();
-  renderMarketplace();
-  document.getElementById("branch-msg").textContent = `Moved "${product.title}" to ${dest}.`;
-});
-
-function renderBusinessPro() {
-  syncBranchSelectors();
-
-  const totalRevenue = (storeData.orders || []).reduce((sum, o) => sum + Number(o.amount || 0), 0);
-  const totalUnits = (storeData.products || []).reduce((sum, p) => sum + Number(p.stock || 0), 0);
-
-  document.getElementById("kpi-revenue").textContent = naira(totalRevenue);
-  document.getElementById("kpi-skus").textContent = (storeData.products || []).length;
-  document.getElementById("kpi-units").textContent = totalUnits;
-  document.getElementById("kpi-orders").textContent = (storeData.orders || []).length;
-
-  const ledger = document.getElementById("orders-ledger");
-  if (!storeData.orders?.length) {
-    ledger.innerHTML = `<p class="subtext">No orders yet.</p>`;
-    return;
-  }
-
-  ledger.innerHTML = storeData.orders
-    .map(
-      (o) => `
-      <div class="list-row">
-        <div>
-          <strong>${o.id} • ${o.productTitle}</strong>
-          <div class="subtext" style="margin:2px 0 0;">${o.buyer} (${o.note})</div>
-        </div>
-        <div style="text-align:right;">
-          <div class="prod-price" style="font-size:0.9rem;">${naira(o.amount)}</div>
-          <span class="badge-live">${o.status}</span>
-        </div>
-      </div>
-    `
-    )
-    .join("");
-}
-
-document.getElementById("export-data-btn").addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify(storeData, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${storeData.slug || "kova"}-backup.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-});
-
-// =========================================================
-// 7. KOVA TALENT / HIRING HUB
-// =========================================================
-document.getElementById("job-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const title = document.getElementById("job-title").value.trim();
-  const branch = document.getElementById("job-branch").value.trim();
-  if (!title || !branch) return;
-
-  storeData.jobs.unshift({ id: "j_" + Date.now(), title, branch, applied: false });
-  await persistStore();
-  renderHiring();
-  e.target.reset();
-});
-
-function renderHiring() {
-  const list = document.getElementById("jobs-container");
-  if (!storeData.jobs?.length) {
-    list.innerHTML = `<p class="subtext">No open roles posted yet.</p>`;
-    return;
-  }
-
-  list.innerHTML = storeData.jobs
-    .map(
-      (j) => `
-      <div class="list-row">
-        <div>
-          <strong>${j.title}</strong>
-          <div class="subtext" style="margin:2px 0 0;">${storeData.storeName} • ${j.branch}</div>
-        </div>
-        <button type="button" class="btn-secondary" onclick="window.toggleApplyJob('${j.id}')">
-          ${j.applied ? "Applied ✓" : "1-Click Apply"}
-        </button>
-      </div>
-    `
-    )
-    .join("");
-}
-
-window.toggleApplyJob = async function (jobId) {
-  const job = storeData.jobs.find((j) => j.id === jobId);
-  if (!job) return;
-  job.applied = true;
-  await persistStore();
-  renderHiring();
-};
+  if (!item) return;
+  editingProductId = productId;
+  document.getElementById("edit-prod-title").value = item.title;
+  document.getElementById("ed

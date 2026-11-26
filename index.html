@@ -23,7 +23,14 @@
   <div id="kova-toast" class="kova-toast hidden" role="status" aria-live="polite"></div>
 
   <!-- SCREEN 1: FULL-SCREEN KOVA ORBITAL SPLASH -->
-  <div id="orbital-screen" class="orbital-screen" role="button" tabindex="0" aria-label="Tap anywhere to enter Kova">
+  <div
+    id="orbital-screen"
+    class="orbital-screen"
+    role="button"
+    tabindex="0"
+    aria-label="Tap anywhere to enter Kova"
+    onclick="if(window.__kovaEnter){window.__kovaEnter();}else{this.classList.add('fade-out');var o=this,a=document.getElementById('auth-screen');setTimeout(function(){o.classList.add('hidden');if(a)a.classList.remove('hidden');},220);}"
+  >
     <div class="orbital-stage">
       <div class="orbit-ring ring-outer">
         <span class="orbit-dot dot-1"></span>
@@ -260,7 +267,6 @@
           </div>
         </div>
 
-        <!-- Escrow Orders Ledger with Verification Controls -->
         <div class="glass-card">
           <div class="section-head">
             <h2>Escrow Orders Ledger</h2>
@@ -270,7 +276,6 @@
           <div id="orders-ledger" class="stack-list"></div>
         </div>
 
-        <!-- Manual Settlement Account & WhatsApp Support -->
         <div class="glass-card">
           <h2>Settlement Account &amp; Store Contact</h2>
           <p class="subtext">Buyers see these details during checkout and can send payment proof to your WhatsApp.</p>
@@ -303,7 +308,6 @@
           </form>
         </div>
 
-        <!-- Multi-Branch Command -->
         <div class="glass-card">
           <h2>Multi-Branch Command</h2>
           <form id="add-branch-form" class="inline-form">
@@ -320,7 +324,6 @@
           <div id="branch-chips" class="chip-wrap" style="margin-top:12px;"></div>
         </div>
 
-        <!-- Data & Catalogue Export / Sign Out -->
         <div class="glass-card">
           <h2>Store Vault &amp; Data Backup</h2>
           <p class="subtext">All store data syncs live with Firebase Cloud Firestore.</p>
@@ -401,5 +404,5 @@
 
   <script type="module" src="app.js"></script>
 </body>
-  </html>
-                                                                                    
+                </html>
+          

@@ -2,343 +2,275 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KOVA — Omnichannel Commerce, Social Blast &amp; Enterprise Store OS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>KOVA — Omnichannel Commerce OS</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Ambient Background Glows -->
-  <div class="bg-orb orb-1"></div>
-  <div class="bg-orb orb-2"></div>
 
-  <!-- Top Navigation -->
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <div class="brand-lockup">
-        <div class="orbital-logo" aria-hidden="true">
-          <span class="orbit-ring ring-outer"></span>
-          <span class="orbit-ring ring-inner"></span>
-          <span class="orbit-dot dot-1"></span>
-          <span class="orbit-dot dot-2"></span>
-          <span class="core-letter">K</span>
-        </div>
-        <div class="brand-text">
-          <div class="brand-title-row">
-            <span class="wordmark">KOVA</span>
-            <span class="pro-badge">OS</span>
-          </div>
-          <small id="store-slug-label">kova.shop/prime-mart</small>
-        </div>
+  <!-- SCREEN 1: FULL-SCREEN KOVA ORBITAL SPLASH -->
+  <div id="orbital-screen" class="orbital-screen" role="button" tabindex="0" aria-label="Tap anywhere to enter Kova">
+    <div class="orbital-stage">
+      <div class="orbit-ring ring-outer">
+        <span class="orbit-dot dot-1"></span>
+        <span class="orbit-dot dot-2"></span>
       </div>
-
-      <div class="auth-actions" id="auth-area">
-        <button type="button" class="btn-ghost" id="open-signin-btn">Sign In</button>
-        <button type="button" class="btn-glow" id="open-signup-btn">Sign Up</button>
+      <div class="orbit-ring ring-mid">
+        <span class="orbit-dot dot-3"></span>
+      </div>
+      <div class="orbit-ring ring-inner"></div>
+      <div class="orbital-core">
+        <span class="core-logo">KOVA</span>
+        <span class="core-tag">COMMERCE OS</span>
       </div>
     </div>
+    <p class="tap-prompt">Tap anywhere to enter</p>
+    <div class="screen-footer">Brought to you by <strong>kova_tech and innovation</strong></div>
+  </div>
 
-    <!-- Navigation Strip -->
-    <div class="nav-strip">
-      <div class="container">
-        <nav class="tabs" role="tablist" aria-label="Kova Workspace">
-          <button type="button" class="tab active" data-tab="merchant">Command &amp; Blast</button>
-          <button type="button" class="tab" data-tab="branches">Branches &amp; Stock</button>
-          <button type="button" class="tab" data-tab="marketplace">Marketplace</button>
-          <button type="button" class="tab" data-tab="orders">Escrow Orders</button>
-          <button type="button" class="tab" data-tab="hiring">Hiring Hub</button>
-        </nav>
-      </div>
-    </div>
-  </header>
-
-  <!-- Hero Orbital Showcase Banner -->
-  <section class="hero-band">
-    <div class="container hero-inner">
-      <div class="hero-copy">
-        <span class="eyebrow">OMNICHANNEL RETAIL &amp; SOCIAL COMMERCE OS</span>
-        <h1>Run Your Store Chain. Blast Every Social at Once.</h1>
-        <p>Sync inventory across branches, publish to WhatsApp Business &amp; TikTok in one tap, accept escrow payments, and hire staff.</p>
+  <!-- SCREEN 2: GET STARTED / CREATE ACCOUNT / SIGN IN -->
+  <div id="auth-screen" class="auth-screen hidden">
+    <div class="auth-wrapper">
+      <div class="auth-brand">
+        <div class="mini-orb">K</div>
+        <h1>Welcome to KOVA</h1>
+        <p>Run your multi-branch store, blast every social channel at once, and scale effortlessly.</p>
       </div>
 
-      <!-- Large Live Orbital Emblem around KOVA -->
-      <div class="hero-orbital-stage" aria-hidden="true">
-        <div class="stage-ring s-ring-1"><span class="sat sat-emerald"></span></div>
-        <div class="stage-ring s-ring-2"><span class="sat sat-cyan"></span></div>
-        <div class="stage-ring s-ring-3"><span class="sat sat-violet"></span></div>
-        <div class="stage-core">
-          <span>KOVA</span>
-          <small>LIVE SYNC</small>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Executive KPI Ribbon -->
-  <section class="container kpi-grid">
-    <div class="kpi-card">
-      <span class="kpi-label">Gross Escrow Volume</span>
-      <strong class="kpi-value" id="kpi-revenue">₦0</strong>
-      <span class="kpi-trend positive">+18.4% this week</span>
-    </div>
-    <div class="kpi-card">
-      <span class="kpi-label">Active Catalog SKUs</span>
-      <strong class="kpi-value" id="kpi-products">0</strong>
-      <span class="kpi-trend">Synced to 3 channels</span>
-    </div>
-    <div class="kpi-card">
-      <span class="kpi-label">Total Branch Units</span>
-      <strong class="kpi-value" id="kpi-stock">0</strong>
-      <span class="kpi-trend">3 active locations</span>
-    </div>
-    <div class="kpi-card">
-      <span class="kpi-label">Open Store Roles</span>
-      <strong class="kpi-value" id="kpi-jobs">0</strong>
-      <span class="kpi-trend">Kova Talent active</span>
-    </div>
-  </section>
-
-  <main class="container main-content">
-    <!-- TAB 1: COMMAND & ONE-CLICK SOCIAL BLAST -->
-    <section id="tab-merchant" class="tab-panel active">
-      <div class="glass-card">
-        <div class="card-head">
-          <div>
-            <h2>Store Identity &amp; Omnichannel Connections</h2>
-            <p class="muted">Tap any social channel to toggle live auto-sync for your store.</p>
-          </div>
-          <span class="verified-chip">Verified Business</span>
+      <div class="glass-card auth-card">
+        <div class="auth-switch">
+          <button type="button" id="show-signup-btn" class="switch-btn active">Create Account</button>
+          <button type="button" id="show-signin-btn" class="switch-btn">Sign In</button>
         </div>
 
-        <div class="grid-2">
-          <label>
-            Business / Brand Name
-            <input id="store-name-input" type="text" value="Kova Prime Mart" />
-          </label>
-          <label>
-            Publishing Branch
-            <select id="branch-select">
-              <option value="Ota Express">Ota Express (HQ)</option>
-              <option value="Ikeja Flagship">Ikeja Flagship</option>
-              <option value="Lekki Hub">Lekki Hub</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="social-grid" id="social-connections">
-          <button type="button" class="social-tile active" data-social="WhatsApp">
-            <span class="social-dot"></span>
-            <div>
-              <strong>WhatsApp Business</strong>
-              <small>Catalog &amp; Broadcast API</small>
-            </div>
-            <span class="status-tag">LIVE</span>
-          </button>
-
-          <button type="button" class="social-tile active" data-social="TikTok">
-            <span class="social-dot"></span>
-            <div>
-              <strong>TikTok Shop &amp; Feed</strong>
-              <small>Auto-Reel &amp; Product Tag</small>
-            </div>
-            <span class="status-tag">LIVE</span>
-          </button>
-
-          <button type="button" class="social-tile active" data-social="Instagram">
-            <span class="social-dot"></span>
-            <div>
-              <strong>Instagram Shopping</strong>
-              <small>Feed + Story Checkout</small>
-            </div>
-            <span class="status-tag">LIVE</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="glass-card">
-        <div class="card-head">
-          <div>
-            <h2>Upload Once &amp; Blast Everywhere</h2>
-            <p class="muted">Publish a product to your Kova store and selected social apps simultaneously.</p>
+        <!-- CREATE ACCOUNT FORM -->
+        <form id="signup-form" class="form-stack">
+          <div class="field">
+            <label for="reg-name">Founder / Owner Name</label>
+            <input id="reg-name" type="text" placeholder="e.g. Alex Adeyemi" required />
           </div>
-          <button type="button" id="ai-caption-btn" class="btn-ai">✨ AI Enhance Caption</button>
-        </div>
-
-        <form id="product-form" class="stack">
-          <div class="grid-2">
-            <label>
-              Product Title
-              <input id="product-title" type="text" placeholder="e.g. Sony WH-1000XM5 Studio Headphones" required />
-            </label>
-            <label>
-              Unit Price (₦)
-              <input id="product-price" type="number" min="1" placeholder="145000" required />
-            </label>
+          <div class="field">
+            <label for="reg-email">Business Email or Phone</label>
+            <input id="reg-email" type="text" placeholder="owner@brand.com" required />
           </div>
-
-          <div class="grid-3">
-            <label>
-              Category
-              <select id="product-category">
-                <option value="Electronics">Electronics</option>
-                <option value="Fashion">Fashion &amp; Luxury</option>
-                <option value="Groceries">Groceries &amp; Fresh</option>
-                <option value="Beauty">Beauty &amp; Skincare</option>
-              </select>
-            </label>
-            <label>
-              Initial Stock Qty
-              <input id="product-stock" type="number" min="1" value="20" required />
-            </label>
-            <label>
-              Product Photo (Optional)
-              <input id="product-image" type="file" accept="image/*" />
-            </label>
+          <div class="field">
+            <label for="reg-store">Brand / Store Name</label>
+            <input id="reg-store" type="text" placeholder="e.g. Kova Prime Mart" required />
           </div>
-
-          <label>
-            Omnichannel Promo Caption
-            <textarea id="product-caption" rows="2" placeholder="Limited drop just arrived. Tap the Kova link to order with buyer protection!"></textarea>
-          </label>
-
-          <div class="checkbox-row">
-            <span class="group-label">Publish Targets:</span>
-            <label class="inline-check"><input type="checkbox" name="channel" value="Kova Store" checked /> Kova Store</label>
-            <label class="inline-check"><input type="checkbox" name="channel" value="WhatsApp" checked /> WhatsApp</label>
-            <label class="inline-check"><input type="checkbox" name="channel" value="TikTok" checked /> TikTok</label>
-            <label class="inline-check"><input type="checkbox" name="channel" value="Instagram" checked /> Instagram</label>
+          <div class="field">
+            <label for="reg-branch">Primary Branch Location</label>
+            <input id="reg-branch" type="text" placeholder="e.g. Ota Express / Ikeja" value="Ota Express" required />
           </div>
-
-          <button type="submit" class="btn-glow full-btn">Launch &amp; Blast to All Selected Channels</button>
+          <button type="submit" class="btn-glow">Get Started &amp; Launch Store</button>
         </form>
 
-        <div id="blast-log" class="blast-log" aria-live="polite"></div>
-
-        <div id="share-box" class="share-box hidden">
-          <div class="share-header">
-            <strong>Generated Social Post &amp; Direct Checkout Link</strong>
-            <button type="button" id="copy-share-btn" class="btn-secondary">Copy Post</button>
+        <!-- SIGN IN FORM -->
+        <form id="signin-form" class="form-stack hidden">
+          <div class="field">
+            <label for="login-email">Registered Email or Phone</label>
+            <input id="login-email" type="text" placeholder="owner@brand.com" required />
           </div>
-          <pre id="share-text"></pre>
-        </div>
+          <button type="submit" class="btn-glow">Access My Dashboard</button>
+          <button type="button" id="demo-access-btn" class="btn-ghost">Continue with Demo Store</button>
+        </form>
       </div>
-    </section>
+    </div>
+    <footer class="app-footer">Brought to you by <strong>kova_tech and innovation</strong></footer>
+  </div>
 
-    <!-- TAB 2: MULTI-BRANCH INVENTORY & STOCK TRANSFER -->
-    <section id="tab-branches" class="tab-panel">
-      <div class="glass-card">
-        <h2>Multi-Branch Chain Overview</h2>
-        <p class="muted">Monitor stock levels across every physical branch and rebalance inventory.</p>
-        <div id="branch-cards" class="cards-grid" style="margin-top:14px;"></div>
-      </div>
-    </section>
-
-    <!-- TAB 3: CONSUMER MARKETPLACE -->
-    <section id="tab-marketplace" class="tab-panel">
-      <div class="glass-card">
-        <div class="card-head">
+  <!-- SCREEN 3: MAIN KOVA WORKSPACE -->
+  <div id="app-shell" class="app-shell hidden">
+    <!-- Compact Top Header -->
+    <header class="topbar">
+      <div class="topbar-row">
+        <div class="brand-cluster">
+          <div class="mini-orb sm">K</div>
           <div>
-            <h2>Kova Consumer Marketplace</h2>
-            <p class="muted">Verified products across branches with built-in escrow protection.</p>
+            <div class="store-title" id="header-store-name">Kova Prime Mart</div>
+            <div class="store-url" id="header-store-slug">kova.shop/kova-prime-mart</div>
           </div>
-          <span class="verified-chip">Buyer Protection Active</span>
         </div>
+        <button type="button" id="account-pill-btn" class="account-pill">Account</button>
+      </div>
 
-        <div class="grid-2 filter-row">
-          <input id="market-search" type="search" placeholder="Search products, branches, or keywords..." />
-          <select id="market-category">
+      <!-- Clean Horizontal Category Pills -->
+      <nav class="category-bar" aria-label="Workspace Categories">
+        <button type="button" class="cat-pill active" data-view="blast">Social Blast</button>
+        <button type="button" class="cat-pill" data-view="market">Marketplace</button>
+        <button type="button" class="cat-pill" data-view="business">Business Pro</button>
+        <button type="button" class="cat-pill" data-view="hiring">Talent Hub</button>
+      </nav>
+    </header>
+
+    <main class="workspace">
+      <!-- VIEW 1: UPLOAD ONCE & BLAST TO ALL SOCIALS -->
+      <section id="view-blast" class="view-section active">
+        <div class="glass-card">
+          <div class="section-head">
+            <h2>Omnichannel Social Blast</h2>
+            <span class="badge-live">All Channels Linked</span>
+          </div>
+          <p class="subtext">Upload a product once to publish across your Kova Store, WhatsApp, TikTok &amp; Instagram simultaneously.</p>
+
+          <form id="product-form" class="form-stack">
+            <div class="row-2">
+              <div class="field">
+                <label for="prod-title">Product Name</label>
+                <input id="prod-title" type="text" placeholder="e.g. Smart Fitness Watch" required />
+              </div>
+              <div class="field">
+                <label for="prod-price">Price (₦)</label>
+                <input id="prod-price" type="number" min="1" placeholder="32000" required />
+              </div>
+            </div>
+
+            <div class="row-2">
+              <div class="field">
+                <label for="prod-cat">Category</label>
+                <select id="prod-cat">
+                  <option value="Electronics">Electronics</option>
+                  <option value="Fashion">Fashion</option>
+                  <option value="Beauty">Beauty</option>
+                  <option value="Groceries">Groceries</option>
+                  <option value="Home">Home &amp; Living</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="prod-branch">Branch &amp; Stock</label>
+                <div class="split-input">
+                  <select id="prod-branch"></select>
+                  <input id="prod-stock" type="number" min="1" value="20" required />
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="prod-caption">Promo Caption</label>
+              <textarea id="prod-caption" rows="2" placeholder="Limited drop! Tap our Kova link to order with escrow protection."></textarea>
+            </div>
+
+            <div class="social-toggles">
+              <label class="toggle-chip"><input type="checkbox" name="channel" value="Kova Store" checked /><span>Kova Store</span></label>
+              <label class="toggle-chip"><input type="checkbox" name="channel" value="WhatsApp" checked /><span>WhatsApp</span></label>
+              <label class="toggle-chip"><input type="checkbox" name="channel" value="TikTok" checked /><span>TikTok</span></label>
+              <label class="toggle-chip"><input type="checkbox" name="channel" value="Instagram" checked /><span>Instagram</span></label>
+            </div>
+
+            <button type="submit" class="btn-glow">Blast to All Selected Channels</button>
+          </form>
+
+          <div id="blast-feedback" class="feedback-banner hidden"></div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: SLEEK CONSUMER MARKETPLACE -->
+      <section id="view-market" class="view-section">
+        <div class="market-toolbar">
+          <input id="market-search" type="search" placeholder="Search items or branches..." />
+          <select id="market-filter-cat">
             <option value="All">All Categories</option>
             <option value="Electronics">Electronics</option>
-            <option value="Fashion">Fashion &amp; Luxury</option>
-            <option value="Groceries">Groceries &amp; Fresh</option>
-            <option value="Beauty">Beauty &amp; Skincare</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Beauty">Beauty</option>
+            <option value="Groceries">Groceries</option>
+            <option value="Home">Home &amp; Living</option>
           </select>
         </div>
 
-        <div id="product-list" class="cards-grid"></div>
-      </div>
-    </section>
+        <div id="marketplace-grid" class="product-grid"></div>
+      </section>
 
-    <!-- TAB 4: ESCROW ORDERS LEDGER -->
-    <section id="tab-orders" class="tab-panel">
-      <div class="glass-card">
-        <h2>Escrow Settlement &amp; Order Ledger</h2>
-        <p class="muted">Funds stay locked in Kova Escrow until delivery is confirmed.</p>
-        <div id="order-list" class="stack" style="margin-top:14px;"></div>
-      </div>
-    </section>
-
-    <!-- TAB 5: KOVA TALENT & HIRING HUB -->
-    <section id="tab-hiring" class="tab-panel">
-      <div class="glass-card">
-        <h2>Post a Store or Social Commerce Role</h2>
-        <form id="job-form" class="grid-3">
-          <input id="job-title" type="text" placeholder="Role (e.g. TikTok Live Host)" required />
-          <input id="job-salary" type="text" placeholder="Pay (e.g. ₦120,000/mo)" required />
-          <input id="job-location" type="text" placeholder="Branch / City (e.g. Ota Express)" required />
-          <button type="submit" class="btn-glow" style="grid-column: 1 / -1;">Publish Job Opening</button>
-        </form>
-      </div>
-
-      <div class="glass-card">
-        <h2>Open Roles Across Kova Stores</h2>
-        <div id="job-list" class="stack"></div>
-      </div>
-    </section>
-  </main>
-
-  <!-- SIGN IN / SIGN UP MODAL -->
-  <div id="auth-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
-    <div class="modal-card">
-      <div class="modal-top">
-        <div class="brand-lockup">
-          <div class="orbital-logo small" aria-hidden="true">
-            <span class="orbit-ring ring-outer"></span>
-            <span class="core-letter">K</span>
+      <!-- VIEW 3: BUSINESS PRO (ANALYTICS, BRANCHES, ESCROW & DATA BACKUP) -->
+      <section id="view-business" class="view-section">
+        <div class="kpi-grid">
+          <div class="kpi-box">
+            <span class="kpi-label">Escrow Revenue</span>
+            <strong class="kpi-val" id="kpi-revenue">₦0</strong>
           </div>
-          <h3 id="auth-modal-title">Welcome to KOVA</h3>
-        </div>
-        <button type="button" id="close-auth-btn" class="icon-close" aria-label="Close">&times;</button>
-      </div>
-
-      <div class="auth-switch">
-        <button type="button" class="auth-tab active" data-mode="signup">Create Account</button>
-        <button type="button" class="auth-tab" data-mode="signin">Sign In</button>
-      </div>
-
-      <form id="auth-form" class="stack">
-        <div id="signup-fields" class="stack">
-          <label>
-            Full Name
-            <input id="auth-name" type="text" placeholder="e.g. Tunde Adeyemi" />
-          </label>
-          <label>
-            Account Role
-            <select id="auth-role">
-              <option value="Business Owner">Business Owner (Open &amp; Run Stores)</option>
-              <option value="Shopper & Talent">Shopper &amp; Job Seeker</option>
-            </select>
-          </label>
+          <div class="kpi-box">
+            <span class="kpi-label">Catalog SKUs</span>
+            <strong class="kpi-val" id="kpi-skus">0</strong>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Total Stock</span>
+            <strong class="kpi-val" id="kpi-units">0</strong>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Active Orders</span>
+            <strong class="kpi-val" id="kpi-orders">0</strong>
+          </div>
         </div>
 
-        <label>
-          Email Address
-          <input id="auth-email" type="email" placeholder="you@business.com" required />
-        </label>
+        <!-- Branch Management & Stock Rebalance -->
+        <div class="glass-card">
+          <h2>Multi-Branch Command</h2>
+          <form id="add-branch-form" class="inline-form">
+            <input id="new-branch-name" type="text" placeholder="Add new branch (e.g. Lekki Phase 1)" required />
+            <button type="submit" class="btn-secondary">Add Branch</button>
+          </form>
 
-        <label>
-          Password
-          <input id="auth-password" type="password" placeholder="••••••••" required />
-        </label>
+          <form id="transfer-form" class="inline-form" style="margin-top:10px;">
+            <select id="transfer-item"></select>
+            <select id="transfer-dest"></select>
+            <button type="submit" class="btn-secondary">Move Stock</button>
+          </form>
+          <p id="branch-msg" class="subtext" style="color:#34d399;margin-top:8px;"></p>
+        </div>
 
-        <button type="submit" id="auth-submit-btn" class="btn-glow full-btn">Create Kova Account</button>
-      </form>
+        <!-- Escrow Orders Ledger -->
+        <div class="glass-card">
+          <h2>Escrow Orders Ledger</h2>
+          <div id="orders-ledger" class="stack-list"></div>
+        </div>
+
+        <!-- Data & Catalogue Export / Import -->
+        <div class="glass-card">
+          <h2>Store Vault &amp; Data Backup</h2>
+          <p class="subtext">Your profile, catalogue, branches, and orders auto-save on this device. Export a JSON backup anytime.</p>
+          <div class="action-row">
+            <button type="button" id="export-data-btn" class="btn-secondary">Download Catalogue Backup (.json)</button>
+            <button type="button" id="signout-btn" class="btn-danger">Switch / Sign Out</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: KOVA TALENT / HIRING HUB -->
+      <section id="view-hiring" class="view-section">
+        <div class="glass-card">
+          <h2>Post Open Store Role</h2>
+          <form id="job-form" class="inline-form">
+            <input id="job-title" type="text" placeholder="Role (e.g. TikTok Live Host)" required />
+            <input id="job-branch" type="text" placeholder="Branch / Remote" required />
+            <button type="submit" class="btn-glow sm">Post Role</button>
+          </form>
+        </div>
+
+        <div id="jobs-container" class="stack-list"></div>
+      </section>
+    </main>
+
+    <footer class="app-footer">Brought to you by <strong>kova_tech and innovation</strong></footer>
+  </div>
+
+  <!-- COMPACT ESCROW CHECKOUT MODAL -->
+  <div id="checkout-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="glass-card modal-box">
+      <div class="section-head">
+        <h3>Escrow Checkout</h3>
+        <button type="button" id="close-checkout-btn" class="btn-ghost sm">✕</button>
+      </div>
+      <div id="checkout-item-info" class="checkout-summary"></div>
+      <div class="form-stack" style="margin-top:12px;">
+        <input id="buyer-name" type="text" placeholder="Customer Name or WhatsApp Number" />
+        <input id="buyer-note" type="text" placeholder="Delivery Address or Branch Pickup" />
+        <button type="button" id="confirm-order-btn" class="btn-glow">Confirm Escrow Payment</button>
+        <button type="button" id="copy-link-btn" class="btn-secondary">Copy Direct Checkout Link</button>
+      </div>
+      <p id="checkout-msg" class="subtext" style="color:#34d399;margin-top:8px;"></p>
     </div>
   </div>
 
   <script src="app.js"></script>
 </body>
-  </html>
-                         
+                                           </html>
+        

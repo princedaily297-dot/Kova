@@ -43,7 +43,6 @@
           <button type="button" id="show-signin-btn" class="switch-btn">Sign In</button>
         </div>
 
-        <!-- CREATE ACCOUNT FORM -->
         <form id="signup-form" class="form-stack">
           <div class="field">
             <label for="reg-name">Founder / Owner Name</label>
@@ -64,7 +63,6 @@
           <button type="submit" class="btn-glow">Get Started &amp; Launch Store</button>
         </form>
 
-        <!-- SIGN IN FORM -->
         <form id="signin-form" class="form-stack hidden">
           <div class="field">
             <label for="login-email">Registered Email</label>
@@ -78,9 +76,8 @@
     <footer class="app-footer">Brought to you by <strong>kova_tech and innovation</strong></footer>
   </div>
 
-  <!-- SCREEN 3: MAIN KOVA WORKSPACE -->
+  <!-- SCREEN 3: MAIN KOVA WORKSPACE & PUBLIC STOREFRONT -->
   <div id="app-shell" class="app-shell hidden">
-    <!-- Compact Top Header -->
     <header class="topbar">
       <div class="topbar-row">
         <div class="brand-cluster">
@@ -90,11 +87,18 @@
             <div class="store-url" id="header-store-slug">kova.shop/kova-prime-mart</div>
           </div>
         </div>
-        <button type="button" id="account-pill-btn" class="account-pill">Account</button>
+        <div class="header-actions">
+          <button type="button" id="share-store-btn" class="account-pill">Share Store</button>
+          <button type="button" id="account-pill-btn" class="account-pill">Account</button>
+        </div>
       </div>
 
-      <!-- Clean Horizontal Category Pills -->
-      <nav class="category-bar" aria-label="Workspace Categories">
+      <div id="buyer-banner" class="buyer-banner hidden">
+        <span>Public Buyer Storefront</span>
+        <button type="button" id="exit-buyer-mode-btn" class="btn-ghost sm">Merchant Login</button>
+      </div>
+
+      <nav id="merchant-nav" class="category-bar" aria-label="Workspace Categories">
         <button type="button" class="cat-pill active" data-view="blast">Social Blast</button>
         <button type="button" class="cat-pill" data-view="market">Marketplace</button>
         <button type="button" class="cat-pill" data-view="business">Business Pro</button>
@@ -103,14 +107,14 @@
     </header>
 
     <main class="workspace">
-      <!-- VIEW 1: UPLOAD ONCE & BLAST TO ALL SOCIALS -->
+      <!-- VIEW 1: UPLOAD ONCE & BLAST TO ALL SOCIALS + PHOTO -->
       <section id="view-blast" class="view-section active">
         <div class="glass-card">
           <div class="section-head">
             <h2>Omnichannel Social Blast</h2>
             <span class="badge-live">All Channels Linked</span>
           </div>
-          <p class="subtext">Upload a product once to publish across your Kova Store, WhatsApp, TikTok &amp; Instagram simultaneously.</p>
+          <p class="subtext">Attach a product photo, publish to your store, and generate instant social share posts.</p>
 
           <form id="product-form" class="form-stack">
             <div class="row-2">
@@ -145,6 +149,12 @@
             </div>
 
             <div class="field">
+              <label for="prod-photo">Product Photo (Optional)</label>
+              <input id="prod-photo" type="file" accept="image/*" />
+              <img id="prod-photo-preview" class="photo-preview hidden" alt="Product preview" />
+            </div>
+
+            <div class="field">
               <label for="prod-caption">Promo Caption</label>
               <textarea id="prod-caption" rows="2" placeholder="Limited drop! Tap our Kova link to order with escrow protection."></textarea>
             </div>
@@ -160,6 +170,15 @@
           </form>
 
           <div id="blast-feedback" class="feedback-banner hidden"></div>
+
+          <div id="social-shortcuts" class="share-panel hidden">
+            <div class="share-panel-title">One-Tap Social Share Shortcuts</div>
+            <pre id="social-post-preview" class="post-box"></pre>
+            <div class="action-row">
+              <a id="whatsapp-share-link" class="btn-glow sm" target="_blank" rel="noopener">Share to WhatsApp</a>
+              <button type="button" id="copy-social-btn" class="btn-secondary">Copy for TikTok / IG</button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -180,7 +199,7 @@
         <div id="marketplace-grid" class="product-grid"></div>
       </section>
 
-      <!-- VIEW 3: BUSINESS PRO (ANALYTICS, BRANCHES, ESCROW & DATA BACKUP) -->
+      <!-- VIEW 3: BUSINESS PRO (MANUAL ACCOUNT SETUP, KPIs, BRANCHES, LEDGER & BACKUP) -->
       <section id="view-business" class="view-section">
         <div class="kpi-grid">
           <div class="kpi-box">
@@ -199,6 +218,30 @@
             <span class="kpi-label">Active Orders</span>
             <strong class="kpi-val" id="kpi-orders">0</strong>
           </div>
+        </div>
+
+        <!-- Manual Payout / Transfer Account Details -->
+        <div class="glass-card">
+          <h2>Manual Settlement Account Details</h2>
+          <p class="subtext">Enter your bank account details manually so buyers can transfer directly during escrow checkout.</p>
+          <form id="bank-form" class="form-stack">
+            <div class="row-2">
+              <div class="field">
+                <label for="bank-name">Bank Name</label>
+                <input id="bank-name" type="text" placeholder="e.g. GTBank / OPay / Kuda" />
+              </div>
+              <div class="field">
+                <label for="bank-number">Account Number</label>
+                <input id="bank-number" type="text" inputmode="numeric" placeholder="0123456789" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="bank-holder">Account Name</label>
+              <input id="bank-holder" type="text" placeholder="e.g. Kova Prime Mart Ltd" />
+            </div>
+            <button type="submit" class="btn-secondary">Save Account Details</button>
+          </form>
+          <p id="bank-msg" class="subtext" style="color:#34d399;margin-top:8px;"></p>
         </div>
 
         <!-- Branch Management & Stock Rebalance -->
@@ -223,12 +266,12 @@
           <div id="orders-ledger" class="stack-list"></div>
         </div>
 
-        <!-- Data & Catalogue Export / Import -->
+        <!-- Data & Catalogue Export / Sign Out -->
         <div class="glass-card">
           <h2>Store Vault &amp; Data Backup</h2>
-          <p class="subtext">Your profile, catalogue, branches, and orders sync with Firebase. Export a JSON backup anytime.</p>
+          <p class="subtext">Your profile, bank details, photos, branches, and orders sync with Firebase.</p>
           <div class="action-row">
-            <button type="button" id="export-data-btn" class="btn-secondary">Download Catalogue Backup (.json)</button>
+            <button type="button" id="export-data-btn" class="btn-secondary">Download Backup (.json)</button>
             <button type="button" id="signout-btn" class="btn-danger">Switch / Sign Out</button>
           </div>
         </div>
@@ -252,19 +295,19 @@
     <footer class="app-footer">Brought to you by <strong>kova_tech and innovation</strong></footer>
   </div>
 
-  <!-- COMPACT ESCROW CHECKOUT MODAL -->
+  <!-- COMPACT ESCROW CHECKOUT MODAL WITH MANUAL BANK ACCOUNT -->
   <div id="checkout-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
     <div class="glass-card modal-box">
       <div class="section-head">
-        <h3>Escrow Checkout</h3>
+        <h3>Escrow Order &amp; Transfer</h3>
         <button type="button" id="close-checkout-btn" class="btn-ghost sm">✕</button>
       </div>
       <div id="checkout-item-info" class="checkout-summary"></div>
+      <div id="checkout-bank-info" class="bank-box"></div>
       <div class="form-stack" style="margin-top:12px;">
-        <input id="buyer-name" type="text" placeholder="Customer Name or WhatsApp Number" />
-        <input id="buyer-note" type="text" placeholder="Delivery Address or Branch Pickup" />
-        <button type="button" id="confirm-order-btn" class="btn-glow">Confirm Escrow Payment</button>
-        <button type="button" id="copy-link-btn" class="btn-secondary">Copy Direct Checkout Link</button>
+        <input id="buyer-name" type="text" placeholder="Your Name or WhatsApp Number" />
+        <input id="buyer-note" type="text" placeholder="Delivery Address or Sender Name" />
+        <button type="button" id="confirm-order-btn" class="btn-glow">I Have Sent Transfer — Submit Order</button>
       </div>
       <p id="checkout-msg" class="subtext" style="color:#34d399;margin-top:8px;"></p>
     </div>
@@ -272,5 +315,5 @@
 
   <script type="module" src="app.js"></script>
 </body>
-                                                                                                                                     </html>
-          
+            </html>
+                                           
